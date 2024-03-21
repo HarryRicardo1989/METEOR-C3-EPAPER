@@ -27,9 +27,10 @@ private:
 
     void reset();
     void sendCommand(uint8_t command);
+    void epd_write_reg(uint8_t command);
+    void epd_write_data(uint8_t command);
     void sendData(const uint8_t *data, size_t length);
     void waitForIdle();
-    void setFullUpdateLut();
-    void setPartialUpdateLut();
-    void loadLUT();
+    void loadLUTFull();
+    void loadLUTPartial();
 };
