@@ -1,4 +1,4 @@
-#include "cppi2c.h"
+#include "cppi2c.hpp"
 
 namespace PROTOCOL
 {

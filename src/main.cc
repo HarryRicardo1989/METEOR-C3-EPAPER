@@ -25,6 +25,7 @@ void app_main()
         }
     }
     init_routines();
+
     switch (wakeup_cause())
     {
     case WAKEUP_TOUCHPAD:
@@ -90,7 +91,7 @@ void app_main()
     }
     while (true)
     {
-        capture_data();
+        //capture_data();
         vTaskDelay(3 * PORT_TICK_PERIOD_SECONDS);
     }
 }

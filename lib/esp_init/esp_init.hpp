@@ -23,11 +23,14 @@
 #include "MQTT/MqttPublish.hpp"
 #include "MQTT/MqttInit.hpp"
 #include "gpio_map.h"
-#include "I2C/cppi2c.h"
+#include "I2C/cppi2c.hpp"
+#include "SPI/cppspi.hpp"
 #include "bme280/bme280_common.hpp"
+#include "EpaperDisplay.hpp"
 #include "battery.hpp"
 #include "OTA/OtaUpdate.hpp"
 #include "mqtt_task.hpp"
+#include "interfaces_map.h"
 
 void init(void);
 void init_routines(void);
@@ -38,6 +41,8 @@ char *convert_value_to_string(int value);
 char *convert_float_to_string(float value);
 void battery_things(void);
 void init_i2c(void);
+void init_SPI(void);
+
 void tryConnectToWiFi(void);
 void display_meteor(float temperature, float pressure, int humidity, float i2cDewPoint, int battery_level, u_int32_t battery_voltage, float altitude);
 

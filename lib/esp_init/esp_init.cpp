@@ -4,6 +4,7 @@
 WiFiManager *wifi = nullptr;
 PROTOCOL::MqttInit *mqtt_initialize = nullptr;
 PROTOCOL::I2c *i2c = nullptr;
+PROTOCOL::Spi *spi = nullptr;
 
 void init(void)
 {
@@ -25,15 +26,18 @@ void init(void)
     {
         save_nvs_int8_var(UPDATE_STATUS, 0);
     }
+    init_i2c();
+    init_SPI();
 }
 void init_routines(void)
 {
-    battery_things();
-    generate_client_ID();
+    // battery_things();
+    // generate_client_ID();
 
-    init_i2c();
-    capture_data();
-    tryConnectToWiFi();
+    // capture_data();
+    // tryConnectToWiFi();
+    display_meteor(0, 0, 0, 0, 0, 0, 0);
+    vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
 
     if (wifi->isConnected())
     {
@@ -43,7 +47,7 @@ void init_routines(void)
         blink_led_custom(0, 100, 0, 20, 50, 1);
         mqtt_initialize->subscribe();
         blink_led_custom(100, 100, 100, 20, 50, 3);
-        mqtt_task_pub_init();
+        // mqtt_task_pub_init();
     }
 }
 void capture_data(void)
@@ -155,6 +159,12 @@ extern "C"
             delete i2c;
             i2c = nullptr;
         }
+        if (spi != nullptr)
+        {
+
+            delete spi;
+            spi = nullptr;
+        }
     }
 }
 
@@ -202,15 +212,28 @@ void init_i2c(void)
     i2c = new PROTOCOL::I2c(I2C_NUM_0);
     i2c->InitMaster(SDA_PIN, SCL_PIN, I2C_CLK_SPEED_HZ, true, true);
 }
+void init_SPI(void)
+{
+#define MODE 3
+#define ADDR_LENGTH 0
+#define SPI_DataSize 8
+#define CLOCK_SPEED 2.5e6
 
+    spi = new PROTOCOL::Spi;
+    spi->Init(SPI2_HOST, SPI_MISO, SPI_SDA, SPI_SCL);
+    spi->RegisterDevice(MODE, SPI_CS, ADDR_LENGTH, SPI_DataSize, CLOCK_SPEED);
+    ESP_LOGW("SPI-INIT", "OK");
+}
 void display_meteor(float temperature, float pressure, int humidity, float i2cDewPoint, int battery_level, u_int32_t battery_voltage, float altitude)
 {
-    char buffer[30]; // Buffer para armazenar o texto formatado
+    EpaperDisplay epaperDisplay(spi, DISP_DC, DISP_RES, DISP_BUSY);
+    epaperDisplay.init();
+    epaperDisplay.clear(250, 122);
+    epaperDisplay.sleep();
 }
 
 void otaInit(void)
 {
-    char buffer[30];
     ESP_LOGW("WIFI-STATUS", "passou 1");
     tryConnectToWiFi();
     ESP_LOGW("WIFI-STATUS", "passou 2");

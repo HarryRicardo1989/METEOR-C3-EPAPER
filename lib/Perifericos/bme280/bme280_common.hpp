@@ -2,7 +2,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "I2C/cppi2c.h"
+#include "I2C/cppi2c.hpp"
 #include <cmath>
 
 namespace CPPBME280
