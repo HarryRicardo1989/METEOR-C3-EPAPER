@@ -5,6 +5,11 @@ WiFiManager *wifi = nullptr;
 PROTOCOL::MqttInit *mqtt_initialize = nullptr;
 PROTOCOL::I2c *i2c = nullptr;
 PROTOCOL::Spi *spi = nullptr;
+EpaperDisplay *epd_display = nullptr;
+EPD_UPDATE *epd_update = nullptr;
+DeviceInfo *device_info_raw = nullptr;
+
+uint8_t image_bw[EPD_W_BUFF_SIZE * EPD_H];
 
 void init(void)
 {
@@ -26,17 +31,45 @@ void init(void)
     {
         save_nvs_int8_var(UPDATE_STATUS, 0);
     }
+
+    if (read_nvs_int8_var(UPDATE_STATUS))
+    {
+        ESP_LOGW("OTA-STATUS", "UpdateStatus true");
+        otaInit();
+        while (true)
+        {
+            vTaskDelay(5 * PORT_TICK_PERIOD_SECONDS);
+        }
+    }
+    device_info_raw = new DeviceInfo;
+
     init_i2c();
+    ESP_LOGW("init_i2c", "Init");
     init_SPI();
+    ESP_LOGW("init_SPI", "Init");
+    init_epDisplay();
+    ESP_LOGW("init_epDisplay", "Init");
+}
+void init_restarted()
+{
+    ESP_LOGW("init_restarted", "Init");
+
+    epd_update->display_make_lines();
+    epd_update->display_make();
+    // epd_update->display_connections(device_info_raw);
+    init_routines();
+}
+void init_fom_timer(void)
+{
+    init_routines();
 }
 void init_routines(void)
 {
-    // battery_things();
-    // generate_client_ID();
+    battery_things();
+    generate_client_ID();
+    capture_data();
 
-    // capture_data();
     // tryConnectToWiFi();
-    display_meteor(0, 0, 0, 0, 0, 0, 0);
     vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
 
     if (wifi->isConnected())
@@ -52,6 +85,7 @@ void init_routines(void)
 }
 void capture_data(void)
 {
+
     CPPBME280::BME280 bme280i2c;
     bme280i2c.InitI2c(i2c, 0x76);
     bme280i2c.Init();
@@ -72,7 +106,31 @@ void capture_data(void)
     save_nvs_string_var(PRESSURE, convert_float_to_string(i2cPressure));
     save_nvs_string_var(ALTITUDE, convert_float_to_string(i2cAltitude));
 
-    display_meteor(i2cTemperature, i2cPressure, i2cHumidity, i2cDewPoint, bat_level, bat_mv, i2cAltitude);
+    device_info_raw->Altitude = i2cAltitude;
+    device_info_raw->Temperature = i2cTemperature;
+    device_info_raw->DewPoint = i2cDewPoint;
+    device_info_raw->Humidity = i2cHumidity;
+    device_info_raw->Pressure = i2cPressure;
+    device_info_raw->bat_mv = bat_mv;
+    device_info_raw->bat_level = bat_level;
+    device_info_raw->Pressure = i2cPressure;
+    epd_update->display_partial(device_info_raw);
+
+    if (wifi->isConnected())
+    {
+        char buffer[20];
+        esp_ip4_addr_t ip = wifi->getIP();
+        sprintf(buffer, "IP:%d.%d.%d.%d", IP2STR(&ip));
+        device_info_raw->IPstring = buffer;
+        device_info_raw->wifi_ssid = read_nvs_string_var(WIFISSID);
+    }
+    else
+    {
+        device_info_raw->IPstring = (char *)"Unconnected";
+        device_info_raw->wifi_ssid = (char *)"Unconnected";
+    }
+    delete device_info_raw;
+    device_info_raw = nullptr;
 }
 
 void scanI2CDevices(int sdaPin, int sclPin)
@@ -105,20 +163,26 @@ void tryConnectToWiFi()
         {
             ESP_LOGW("WIFI-STATUS", "Attempting to connect to %s", wifiCredentials[i].ssid);
             vTaskDelay(30 * portTICK_PERIOD_MS);
+            device_info_raw->IPstring = (char *)"Unconnected";
+            device_info_raw->wifi_ssid = (char *)"Unconnected";
             attempt++;
-            blink_led_custom(50, 0, 50, 30, 50, 1);
         }
         if (wifi->isConnected())
         {
-            blink_led_custom(0, 100, 0, 20, 50, 4);
             ESP_LOGI("WIFI-STATUS", "Connected to %s", wifiCredentials[i].ssid);
+            save_nvs_string_var(WIFISSID, (char *)wifiCredentials[i].ssid);
+            char buffer[20];
+            esp_ip4_addr_t ip = wifi->getIP();
+            sprintf(buffer, "IP:%d.%d.%d.%d", IP2STR(&ip));
+            device_info_raw->IPstring = buffer;
+            epd_update->display_connections(device_info_raw);
+
             return; // Conexão bem-sucedida, sai da função
         }
 
         wifi->disconnect();
     }
 
-    blink_led_custom(100, 0, 0, 15, 50, 5);
     ESP_LOGW("WIFI-STATUS", "Failed to connect to any network");
 }
 void generate_client_ID(void)
@@ -165,6 +229,24 @@ extern "C"
             delete spi;
             spi = nullptr;
         }
+        if (epd_display != nullptr)
+        {
+
+            delete epd_display;
+            epd_display = nullptr;
+        }
+        if (epd_display != nullptr)
+        {
+
+            delete epd_update;
+            epd_update = nullptr;
+        }
+        if (device_info_raw != nullptr)
+        {
+
+            delete device_info_raw;
+            device_info_raw = nullptr;
+        }
     }
 }
 
@@ -206,32 +288,89 @@ void battery_things(void)
     save_nvs_int8_var(BATTERY_CHARGING_STATUS, charging);
     ESP_LOGI("BATTERY", "%ld", bat_mv);
 }
-
+void init_epDisplay(void)
+{
+    if (epd_display == nullptr)
+    {
+        epd_display = new EpaperDisplay(spi, DISP_DC, DISP_RES, DISP_BUSY);
+        epd_update = new EPD_UPDATE(epd_display);
+    }
+    ESP_LOGW("EPD-INIT", "OK");
+}
 void init_i2c(void)
 {
     i2c = new PROTOCOL::I2c(I2C_NUM_0);
     i2c->InitMaster(SDA_PIN, SCL_PIN, I2C_CLK_SPEED_HZ, true, true);
+    ESP_LOGW("I2C-INIT", "OK");
 }
+
 void init_SPI(void)
 {
-#define MODE 3
-#define ADDR_LENGTH 0
-#define SPI_DataSize 8
-#define CLOCK_SPEED 2.5e6
-
     spi = new PROTOCOL::Spi;
     spi->Init(SPI2_HOST, SPI_MISO, SPI_SDA, SPI_SCL);
     spi->RegisterDevice(MODE, SPI_CS, ADDR_LENGTH, SPI_DataSize, CLOCK_SPEED);
     ESP_LOGW("SPI-INIT", "OK");
 }
+
 void display_meteor(float temperature, float pressure, int humidity, float i2cDewPoint, int battery_level, u_int32_t battery_voltage, float altitude)
 {
-    EpaperDisplay epaperDisplay(spi, DISP_DC, DISP_RES, DISP_BUSY);
-    epaperDisplay.init();
-    epaperDisplay.clear(250, 122);
-    epaperDisplay.sleep();
-}
+    char buffer[100];
+    epd_display->epd_paint_newimage(image_bw, EPD_W, EPD_H, EPD_ROTATE_0, EPD_COLOR_WHITE);
+    epd_display->epd_paint_selectimage(image_bw);
+    epd_display->epd_paint_clear(EPD_COLOR_WHITE);
 
+    // x=0
+    // x=27
+    // x=46
+    // x=65
+    // x=84
+    // x=103
+    //
+    epd_display->epd_paint_showString(20, 0, (uint8_t *)&"METEOR-MOBILE", EPD_FONT_SIZE24x12, EPD_COLOR_BLACK);
+    // info esquerda
+    sprintf(buffer, "Temp:%.2fC", temperature); // Formata a temperatura
+    epd_display->epd_paint_showString(0, 27, (uint8_t *)buffer, EPD_FONT_SIZE16x8, EPD_COLOR_BLACK);
+    sprintf(buffer, "Press:%.2fhPa", pressure); // Formata a pressão
+    epd_display->epd_paint_showString(0, 46, (uint8_t *)buffer, EPD_FONT_SIZE16x8, EPD_COLOR_BLACK);
+    sprintf(buffer, "DewP:%.2fC", i2cDewPoint); // Formata o ponto de orvalho
+    epd_display->epd_paint_showString(0, 65, (uint8_t *)buffer, EPD_FONT_SIZE16x8, EPD_COLOR_BLACK);
+
+    // info Direita
+    sprintf(buffer, "Humid:%d%%", humidity); // Formata a umidade
+    epd_display->epd_paint_showString(126, 27, (uint8_t *)buffer, EPD_FONT_SIZE16x8, EPD_COLOR_BLACK);
+    sprintf(buffer, "Alt:%.2fm", altitude); // Formata o ponto de altitude
+    epd_display->epd_paint_showString(126, 46, (uint8_t *)buffer, EPD_FONT_SIZE16x8, EPD_COLOR_BLACK);
+
+    // battery Percent box
+    sprintf(buffer, "%d%%", battery_level); // Formata o nível da bateria
+    epd_display->epd_paint_showString(225, 2, (uint8_t *)buffer, EPD_FONT_SIZE8x6, EPD_COLOR_BLACK);
+    epd_display->epd_paint_drawLine(225, 1, 249, 1, EPD_COLOR_BLACK);   // superior
+    epd_display->epd_paint_drawLine(225, 11, 249, 11, EPD_COLOR_BLACK); // inferior
+    epd_display->epd_paint_drawLine(224, 0, 224, 11, EPD_COLOR_BLACK);  // esquerda
+    epd_display->epd_paint_drawLine(249, 0, 249, 11, EPD_COLOR_BLACK);  // direita
+    epd_display->epd_paint_drawLine(223, 3, 223, 9, EPD_COLOR_BLACK);   // positivo1
+    epd_display->epd_paint_drawLine(222, 3, 222, 9, EPD_COLOR_BLACK);   // positivo2
+
+    // battery voltage box
+    sprintf(buffer, "4200mV"); // Formata a tensao da bateria
+    // sprintf(buffer, "%ldmV", battery_voltage); // Formata a tensao da bateria
+    epd_display->epd_paint_showString(211, 15, (uint8_t *)buffer, EPD_FONT_SIZE8x6, EPD_COLOR_BLACK);
+    epd_display->epd_paint_drawLine(210, 13, 249, 13, EPD_COLOR_BLACK); // superior
+    epd_display->epd_paint_drawLine(210, 24, 249, 24, EPD_COLOR_BLACK); // inferior
+    epd_display->epd_paint_drawLine(209, 13, 209, 24, EPD_COLOR_BLACK); // esquerda
+    epd_display->epd_paint_drawLine(249, 13, 249, 24, EPD_COLOR_BLACK); // direita
+    epd_display->epd_paint_drawLine(208, 16, 208, 22, EPD_COLOR_BLACK); // positivo1
+    epd_display->epd_paint_drawLine(207, 16, 207, 22, EPD_COLOR_BLACK); // positivo2
+
+    // lines
+    epd_display->epd_paint_drawLine(125, 27, 125, 122, EPD_COLOR_BLACK);
+    epd_display->epd_paint_drawLine(1, 26, 249, 26, EPD_COLOR_BLACK);
+    // epd_display->epd_paint_drawLine(1, 111, 249, 111, EPD_COLOR_BLACK);
+
+    epd_display->epd_displayBW_partial(image_bw);
+
+    epd_display->sleep(EPD_DEEPSLEEP_MODE1);
+}
 void otaInit(void)
 {
     ESP_LOGW("WIFI-STATUS", "passou 1");

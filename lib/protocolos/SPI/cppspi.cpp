@@ -62,7 +62,9 @@ namespace PROTOCOL
         _spi_interface_cfg.mode = mode;
         _spi_interface_cfg.clock_speed_hz = bus_speed;
         _spi_interface_cfg.spics_io_num = ss;
-        _spi_interface_cfg.queue_size = 5;
+        _spi_interface_cfg.queue_size = 8;
+        _spi_interface_cfg.cs_ena_pretrans = 16;
+        _spi_interface_cfg.cs_ena_posttrans = 16;
 
         status |= spi_bus_add_device(_spi_peripheral, &_spi_interface_cfg, &_handle);
 

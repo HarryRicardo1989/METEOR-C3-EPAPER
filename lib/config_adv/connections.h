@@ -20,7 +20,6 @@ const WiFiCredential wifiCredentials[] = {
 #define MQTT_QOS 2
 #define MQTT_RETAIN false
 
-#define CLIENT_ID (char *)"clientID"
 #define MQTT_CLIENT_USER "pcd_meteor"
 #define MQTT_CLIENT_PASS "pcd_meteor@123"
 

@@ -11,8 +11,6 @@
 #include "esp_log.h"
 #include "battery.hpp"
 #include "rw_data.h"
-#include "rgb_led.hpp"
-#include "blink_color.h"
 
 void charging_status_read_init();
 void battery_read_stop();

@@ -15,7 +15,6 @@
 #include "esp_log.h"
 #include "sleep_timer.h"
 #include "esp_mac.h"
-#include "rgb_led.hpp"
 #include "blink_color.h"
 #include "connections.h"
 #include "WIFI/wifi_manager.hpp"
@@ -30,11 +29,12 @@
 #include "battery.hpp"
 #include "OTA/OtaUpdate.hpp"
 #include "mqtt_task.hpp"
-#include "interfaces_map.h"
+#include "update_display.hpp"
 
 void init(void);
 void init_routines(void);
-
+void init_restarted(void);
+void init_fom_timer(void);
 void generate_client_ID(void);
 void scanI2CDevices(int sdaPin, int sclPin);
 char *convert_value_to_string(int value);
@@ -42,6 +42,7 @@ char *convert_float_to_string(float value);
 void battery_things(void);
 void init_i2c(void);
 void init_SPI(void);
+void init_epDisplay(void);
 
 void tryConnectToWiFi(void);
 void display_meteor(float temperature, float pressure, int humidity, float i2cDewPoint, int battery_level, u_int32_t battery_voltage, float altitude);

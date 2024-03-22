@@ -12,23 +12,22 @@
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 
-#define SDA_PIN GPIO_NUM_10
-#define SCL_PIN GPIO_NUM_9
+// i2C Pins
+#define SDA_PIN GPIO_NUM_9
+#define SCL_PIN GPIO_NUM_8
 
-// #define SPI_MISO GPIO_NUM_5
-// #define SPI_MOSI GPIO_NUM_6
-// #define SPI_SCK GPIO_NUM_7
-// #define SPI_SS GPIO_NUM_4
+// SPI pins
+#define SPI_MISO GPIO_NUM_NC
+#define SPI_SDA GPIO_NUM_5
+#define SPI_SCL GPIO_NUM_6
+#define SPI_CS GPIO_NUM_7
+#define DISP_DC GPIO_NUM_4
+#define DISP_RES GPIO_NUM_3
+#define DISP_BUSY GPIO_NUM_2
 
-#define WAKE_UP_PIN GPIO_NUM_7
-#define CHARGING GPIO_NUM_6
-#define CHARGED GPIO_NUM_5
-
-#define LED_BLUE_GPIO GPIO_NUM_8
-#define RGB_LED_RED_GPIO GPIO_NUM_1
-#define RGB_LED_GREEN_GPIO GPIO_NUM_3
-#define RGB_LED_BLUE_GPIO GPIO_NUM_4
-#define BATTERY_PIN GPIO_NUM_2
+#define CHARGING GPIO_NUM_1
+#define CHARGED GPIO_NUM_10
+#define BATTERY_PIN GPIO_NUM_0
 
 #define LED_DUTY_RESOLUTION LEDC_TIMER_12_BIT
 #define I2C_CLK_SPEED_HZ 400000
@@ -41,3 +40,12 @@
  * LEDC_TIMER_13_BIT = 8192
  * LEDC_TIMER_14_BIT = 16384
  */
+
+#define RGB_LED_RED_GPIO GPIO_NUM_NC
+#define RGB_LED_GREEN_GPIO GPIO_NUM_NC
+#define RGB_LED_BLUE_GPIO GPIO_NUM_NC
+
+#define MODE 3
+#define ADDR_LENGTH 0
+#define SPI_DataSize 8
+#define CLOCK_SPEED SPI_MASTER_FREQ_8M

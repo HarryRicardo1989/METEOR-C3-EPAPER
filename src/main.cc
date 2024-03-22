@@ -14,28 +14,17 @@ extern "C"
 void app_main()
 {
     init();
-
-    if (read_nvs_int8_var(UPDATE_STATUS))
-    {
-        ESP_LOGW("OTA-STATUS", "UpdateStatus true");
-        otaInit();
-        while (true)
-        {
-            vTaskDelay(5 * PORT_TICK_PERIOD_SECONDS);
-        }
-    }
-    init_routines();
+    ESP_LOGW("init", "inited");
 
     switch (wakeup_cause())
     {
     case WAKEUP_TOUCHPAD:
         ESP_LOGW("ESP-WAKE-UP", "FROM Touch");
         ////create_sleep_timer(0);
-
         break;
     case WAKEUP_TIMER:
         ESP_LOGW("ESP-WAKE-UP", "FROM TIMER");
-        // esp_init_from_timer();
+        init_fom_timer();
         // create_sleep_timer(0);
         break;
     case WAKEUP_BT:
@@ -78,20 +67,20 @@ void app_main()
     case WAKEUP_UNDEFINED:
         ESP_LOGW("ESP-WAKE-UP", "WAKEUP_UNDEFINED");
         save_nvs_string_var(MODEL, DEFAULT_MODEL);
-        save_nvs_u32_var(TIME_TO_WAKE_UP, 5);
-
+        save_nvs_u32_var(TIME_TO_WAKE_UP, 40);
+        void init_restarted();
         // create_sleep_timer(0);
         break;
 
     default:
         ESP_LOGW("ESP-WAKE-UP", "RESET ERROR %d", wakeup_cause());
+        void init_restarted();
 
         // create_sleep_timer(0);
         break;
     }
     while (true)
     {
-        //capture_data();
         vTaskDelay(3 * PORT_TICK_PERIOD_SECONDS);
     }
 }

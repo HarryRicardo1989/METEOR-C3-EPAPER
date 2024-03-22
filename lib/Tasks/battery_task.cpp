@@ -31,7 +31,6 @@ void vTask_charging_status_read(void *pvParameters)
                 is_blink_charged = true;
                 is_blink_charging = false;
                 is_blink_Unpluged = false;
-                blink_color(CHARGED_COLOR, CHARGED_TIMING);
                 ESP_LOGI("BATTERY", "Carregado");
             }
         }
@@ -44,7 +43,6 @@ void vTask_charging_status_read(void *pvParameters)
                 is_blink_charging = true;
                 is_blink_Unpluged = false;
                 // blink_color_stop();
-                blink_color(CHARGING_COLOR, CHARGING_TIMING);
                 ESP_LOGI("BATTERY", "Carregando");
             }
         }
@@ -58,7 +56,6 @@ void vTask_charging_status_read(void *pvParameters)
                 is_blink_Unpluged = true;
 
                 // blink_color_stop();
-                blink_color(ON_WF_STATUS_COLOR, ON_WF_STATUS_TIMING);
                 ESP_LOGI("BATTERY", "Unpluged");
             }
         }

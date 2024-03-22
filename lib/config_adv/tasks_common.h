@@ -73,6 +73,8 @@
 #define DEWPOINT (char *)"dewPoint"
 #define UPDATE_STATUS (char *)"updateStatus"
 #define OTA_URL (char *)"otaUrl"
+#define WIFISSID (char *)"wifiSsd"
+#define CLIENT_ID (char *)"clientID"
 
 /**
  * @brief AES Crypto config

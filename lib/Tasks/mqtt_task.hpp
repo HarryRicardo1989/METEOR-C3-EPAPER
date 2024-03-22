@@ -12,8 +12,6 @@
 #include "esp_log.h"
 // payload
 #include "battery.hpp"
-#include "rgb_led.hpp"
-#include "blink_color.h"
 #include "MQTT/MqttClient.hpp"
 #include "MQTT/MqttPublish.hpp"
 

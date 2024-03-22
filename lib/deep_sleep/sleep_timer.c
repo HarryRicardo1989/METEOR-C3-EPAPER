@@ -10,8 +10,6 @@
  */
 #include "tasks_common.h"
 #include "gpio_map.h"
-#include "rgb_led.h"
-#include "blink_color.h"
 
 #include "sleep_timer.h"
 #include "driver/rtc_io.h"
@@ -32,7 +30,6 @@ void create_sleep_timer(int sleep_timer_time_s)
     esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_AUTO);
     // esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_AUTO);
     esp_sleep_enable_timer_wakeup(read_nvs_uint32_var(TIME_TO_WAKE_UP) * SECONDS);
-    esp_sleep_is_valid_wakeup_gpio(WAKE_UP_PIN);
     printf("criou novo timer %d segundos \n", tSleep_timer_time_s);
     if (tSleep_timer_time_s == 0)
     {
@@ -59,8 +56,6 @@ void delete_sleep_timer(void)
 
 void init_sleep(void)
 {
-    blink_color_stop();
-    blink_led_dual_collor(GO_SLEEP_COLOR0, GO_SLEEP_TIMING0, GO_SLEEP_COLOR1, GO_SLEEP_TIMING1);
     cleanup();
     isolate_gpio();
 
@@ -70,7 +65,7 @@ void init_sleep(void)
 
 void isolate_gpio(void)
 {
-    //esp_sleep_config_gpio_isolate();
+    // esp_sleep_config_gpio_isolate();
 }
 
 void deisolate_gpio(void)
