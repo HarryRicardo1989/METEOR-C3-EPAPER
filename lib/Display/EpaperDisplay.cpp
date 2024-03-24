@@ -14,7 +14,6 @@ EpaperDisplay::EpaperDisplay(PROTOCOL::Spi *spi, gpio_num_t pin_dc, gpio_num_t p
 
 uint8_t EpaperDisplay::init()
 {
-    ESP_LOGW("EPD-INIT", "Trying");
     vTaskDelay(pdMS_TO_TICKS(20)); // Delay após o reset hardware
     if (this->_hibernating)
     {
@@ -28,7 +27,6 @@ uint8_t EpaperDisplay::init()
     epd_write_reg(0x12);          // Software reset
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
     waitForIdle();                // Espera pelo pino busy
-    ESP_LOGW("EPD-INIT", "Software reset");
 
     epd_write_reg(0x01);          // Driver output control
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
@@ -36,19 +34,16 @@ uint8_t EpaperDisplay::init()
     epd_write_data(0x01);
     epd_write_data(0x01);
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
-    ESP_LOGW("EPD-INIT", "Driver output control");
 
     epd_write_reg(0x11);          // data entry mode
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
     epd_write_data(0x01);
-    ESP_LOGW("EPD-INIT", "data entry mode");
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
 
     epd_write_reg(0x44);          // set Ram-X address start/end position
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
     epd_write_data(0x00);
-    epd_write_data(0x0F); // 0x0F-->(15+1)*8=128
-    ESP_LOGW("EPD-INIT", "set Ram-X address start/end position");
+    epd_write_data(0x0F);         // 0x0F-->(15+1)*8=128
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
 
     epd_write_reg(0x45);          // set Ram-Y address start/end position
@@ -57,23 +52,19 @@ uint8_t EpaperDisplay::init()
     epd_write_data(0x01);
     epd_write_data(0x00);
     epd_write_data(0x00);
-    ESP_LOGW("EPD-INIT", "set Ram-Y address start/end position");
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
 
     epd_write_reg(0x3C);          // BorderWavefrom
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
     epd_write_data(0x05);
-    ESP_LOGW("EPD-INIT", "BorderWavefrom");
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
 
     epd_write_reg(0x18);          // Read built-in temperature sensor
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
     epd_write_data(0x80);
-    ESP_LOGW("EPD-INIT", "Read built-in temperature sensor");
     vTaskDelay(pdMS_TO_TICKS(5)); // Delay
 
     epd_setpos(0, 0);
-    ESP_LOGW("EPD-INIT", "epd_setpos");
 
     if (epd_power_on())
         return 1;
@@ -219,7 +210,6 @@ void EpaperDisplay::sleep(uint8_t mode)
 
 void EpaperDisplay::waitForIdle()
 {
-    ESP_LOGI("EP_IDLE", "WAITING");
     while (gpio_pin_busy.get_level() == 1)
     {
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -380,7 +370,6 @@ void EpaperDisplay::epd_paint_setpixel(uint16_t Xpoint, uint16_t Ypoint, uint16_
 }
 void EpaperDisplay::epd_paint_clear(uint16_t color)
 {
-    ESP_LOGW("EPD-CLEAR", "Trying");
 
     uint16_t X, Y;
     uint32_t Addr;
@@ -393,7 +382,6 @@ void EpaperDisplay::epd_paint_clear(uint16_t color)
             EPD_Paint.Image[Addr] = color;
         }
     }
-    ESP_LOGW("EPD-CLEAR", "OK");
 }
 void EpaperDisplay::epd_paint_selectimage(uint8_t *image)
 {

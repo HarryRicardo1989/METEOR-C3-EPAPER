@@ -14,6 +14,8 @@ extern "C"
 void app_main()
 {
     init();
+    create_sleep_timer(40);
+
     ESP_LOGW("init", "inited");
 
     switch (wakeup_cause())
@@ -25,7 +27,8 @@ void app_main()
     case WAKEUP_TIMER:
         ESP_LOGW("ESP-WAKE-UP", "FROM TIMER");
         init_fom_timer();
-        // create_sleep_timer(0);
+        vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
+        create_sleep_timer(0);
         break;
     case WAKEUP_BT:
         ESP_LOGW("ESP-WAKE-UP", "WAKEUP_BT");
@@ -66,15 +69,18 @@ void app_main()
         break;
     case WAKEUP_UNDEFINED:
         ESP_LOGW("ESP-WAKE-UP", "WAKEUP_UNDEFINED");
+        create_sleep_timer(10);
         save_nvs_string_var(MODEL, DEFAULT_MODEL);
         save_nvs_u32_var(TIME_TO_WAKE_UP, 40);
-        void init_restarted();
-        // create_sleep_timer(0);
+        save_nvs_string_var(WIFISSID, (char *)"Unconnected");
+        save_nvs_string_var(WIFI_IP, (char *)"Unconnected");
+        init_restarted();
         break;
 
     default:
         ESP_LOGW("ESP-WAKE-UP", "RESET ERROR %d", wakeup_cause());
-        void init_restarted();
+        init_restarted();
+        create_sleep_timer(0);
 
         // create_sleep_timer(0);
         break;

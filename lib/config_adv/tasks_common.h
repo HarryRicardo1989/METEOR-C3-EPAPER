@@ -73,7 +73,8 @@
 #define DEWPOINT (char *)"dewPoint"
 #define UPDATE_STATUS (char *)"updateStatus"
 #define OTA_URL (char *)"otaUrl"
-#define WIFISSID (char *)"wifiSsd"
+#define WIFISSID (char *)"wifiSSID"
+#define WIFI_IP (char *)"wifiIP"
 #define CLIENT_ID (char *)"clientID"
 
 /**
@@ -94,7 +95,7 @@
  * @brief NVS Models config
  *
  */
-#define DEFAULT_MODEL (char *)"METEOR_Monitor" // default model
+#define DEFAULT_MODEL (char *)"METEOR_Mobile-c3" // default model
 
 #define WAKEUP_TOUCH_TRESHOLD (char *)"wakeupTreshold" // 900
                                                        // #wake up setpoint

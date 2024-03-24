@@ -56,20 +56,21 @@ void init_restarted()
 
     epd_update->display_make_lines();
     epd_update->display_make();
-    // epd_update->display_connections(device_info_raw);
     init_routines();
 }
 void init_fom_timer(void)
 {
+    ESP_LOGW("init_fom_timer", "Init");
     init_routines();
 }
 void init_routines(void)
 {
     battery_things();
     generate_client_ID();
+    epd_update->display_make();
     capture_data();
+    tryConnectToWiFi();
 
-    // tryConnectToWiFi();
     vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
 
     if (wifi->isConnected())
@@ -77,10 +78,13 @@ void init_routines(void)
         esp_ip4_addr_t ip = wifi->getIP();
         ESP_LOGW("WIFI-STATUS", "Connected at IP: %d.%d.%d.%d", IP2STR(&ip));
         mqtt_initialize->connect();
-        blink_led_custom(0, 100, 0, 20, 50, 1);
         mqtt_initialize->subscribe();
-        blink_led_custom(100, 100, 100, 20, 50, 3);
-        // mqtt_task_pub_init();
+        mqtt_initialize->publish_full_data();
+    }
+    else
+    {
+        save_nvs_string_var(WIFISSID, (char *)"Unconnected");
+        save_nvs_string_var(WIFI_IP, (char *)"Unconnected");
     }
 }
 void capture_data(void)
@@ -114,38 +118,19 @@ void capture_data(void)
     device_info_raw->bat_mv = bat_mv;
     device_info_raw->bat_level = bat_level;
     device_info_raw->Pressure = i2cPressure;
+    device_info_raw->IPstring = read_nvs_string_var(WIFI_IP);
+    device_info_raw->wifi_ssid = read_nvs_string_var(WIFISSID);
+    device_info_raw->charged = read_nvs_int8_var(BATTERY_CHARGED_STATUS);
+    device_info_raw->charging = read_nvs_int8_var(BATTERY_CHARGING_STATUS);
+
     epd_update->display_partial(device_info_raw);
+    ESP_LOGE("all displayed", "ok");
 
     if (wifi->isConnected())
     {
         char buffer[20];
         esp_ip4_addr_t ip = wifi->getIP();
         sprintf(buffer, "IP:%d.%d.%d.%d", IP2STR(&ip));
-        device_info_raw->IPstring = buffer;
-        device_info_raw->wifi_ssid = read_nvs_string_var(WIFISSID);
-    }
-    else
-    {
-        device_info_raw->IPstring = (char *)"Unconnected";
-        device_info_raw->wifi_ssid = (char *)"Unconnected";
-    }
-    delete device_info_raw;
-    device_info_raw = nullptr;
-}
-
-void scanI2CDevices(int sdaPin, int sclPin)
-{
-    printf("Scan init...\n");
-    printf("Scan prepare...\n");
-
-    printf("Scanning I2C bus...\n");
-    for (uint8_t address = 1; address < 0x7F; address++)
-    {
-
-        if (i2c->testConnection(address))
-        {
-            printf("I2C device found at address 0x%2X \n", address);
-        }
     }
 }
 
@@ -159,28 +144,28 @@ void tryConnectToWiFi()
     {
         wifi->connect(wifiCredentials[i].ssid, wifiCredentials[i].password);
         int attempt = 0;
-        while (!wifi->isConnected() && attempt < 4)
+        while (!wifi->isConnected() && attempt < 6)
         {
             ESP_LOGW("WIFI-STATUS", "Attempting to connect to %s", wifiCredentials[i].ssid);
-            vTaskDelay(30 * portTICK_PERIOD_MS);
-            device_info_raw->IPstring = (char *)"Unconnected";
-            device_info_raw->wifi_ssid = (char *)"Unconnected";
+            vTaskDelay(500 * portTICK_PERIOD_MS);
             attempt++;
         }
         if (wifi->isConnected())
         {
             ESP_LOGI("WIFI-STATUS", "Connected to %s", wifiCredentials[i].ssid);
-            save_nvs_string_var(WIFISSID, (char *)wifiCredentials[i].ssid);
             char buffer[20];
             esp_ip4_addr_t ip = wifi->getIP();
             sprintf(buffer, "IP:%d.%d.%d.%d", IP2STR(&ip));
-            device_info_raw->IPstring = buffer;
-            epd_update->display_connections(device_info_raw);
+            save_nvs_string_var(WIFISSID, (char *)wifiCredentials[i].ssid);
+            save_nvs_string_var(WIFI_IP, buffer);
+            create_sleep_timer(10);
 
             return; // Conexão bem-sucedida, sai da função
         }
 
         wifi->disconnect();
+        save_nvs_string_var(WIFISSID, (char *)"Unconnected");
+        save_nvs_string_var(WIFI_IP, (char *)"Unconnected");
     }
 
     ESP_LOGW("WIFI-STATUS", "Failed to connect to any network");
@@ -293,7 +278,7 @@ void init_epDisplay(void)
     if (epd_display == nullptr)
     {
         epd_display = new EpaperDisplay(spi, DISP_DC, DISP_RES, DISP_BUSY);
-        epd_update = new EPD_UPDATE(epd_display);
+        epd_update = new EPD_UPDATE(epd_display, EPD_COLOR_WHITE, EPD_COLOR_BLACK);
     }
     ESP_LOGW("EPD-INIT", "OK");
 }
@@ -312,74 +297,12 @@ void init_SPI(void)
     ESP_LOGW("SPI-INIT", "OK");
 }
 
-void display_meteor(float temperature, float pressure, int humidity, float i2cDewPoint, int battery_level, u_int32_t battery_voltage, float altitude)
-{
-    char buffer[100];
-    epd_display->epd_paint_newimage(image_bw, EPD_W, EPD_H, EPD_ROTATE_0, EPD_COLOR_WHITE);
-    epd_display->epd_paint_selectimage(image_bw);
-    epd_display->epd_paint_clear(EPD_COLOR_WHITE);
-
-    // x=0
-    // x=27
-    // x=46
-    // x=65
-    // x=84
-    // x=103
-    //
-    epd_display->epd_paint_showString(20, 0, (uint8_t *)&"METEOR-MOBILE", EPD_FONT_SIZE24x12, EPD_COLOR_BLACK);
-    // info esquerda
-    sprintf(buffer, "Temp:%.2fC", temperature); // Formata a temperatura
-    epd_display->epd_paint_showString(0, 27, (uint8_t *)buffer, EPD_FONT_SIZE16x8, EPD_COLOR_BLACK);
-    sprintf(buffer, "Press:%.2fhPa", pressure); // Formata a pressão
-    epd_display->epd_paint_showString(0, 46, (uint8_t *)buffer, EPD_FONT_SIZE16x8, EPD_COLOR_BLACK);
-    sprintf(buffer, "DewP:%.2fC", i2cDewPoint); // Formata o ponto de orvalho
-    epd_display->epd_paint_showString(0, 65, (uint8_t *)buffer, EPD_FONT_SIZE16x8, EPD_COLOR_BLACK);
-
-    // info Direita
-    sprintf(buffer, "Humid:%d%%", humidity); // Formata a umidade
-    epd_display->epd_paint_showString(126, 27, (uint8_t *)buffer, EPD_FONT_SIZE16x8, EPD_COLOR_BLACK);
-    sprintf(buffer, "Alt:%.2fm", altitude); // Formata o ponto de altitude
-    epd_display->epd_paint_showString(126, 46, (uint8_t *)buffer, EPD_FONT_SIZE16x8, EPD_COLOR_BLACK);
-
-    // battery Percent box
-    sprintf(buffer, "%d%%", battery_level); // Formata o nível da bateria
-    epd_display->epd_paint_showString(225, 2, (uint8_t *)buffer, EPD_FONT_SIZE8x6, EPD_COLOR_BLACK);
-    epd_display->epd_paint_drawLine(225, 1, 249, 1, EPD_COLOR_BLACK);   // superior
-    epd_display->epd_paint_drawLine(225, 11, 249, 11, EPD_COLOR_BLACK); // inferior
-    epd_display->epd_paint_drawLine(224, 0, 224, 11, EPD_COLOR_BLACK);  // esquerda
-    epd_display->epd_paint_drawLine(249, 0, 249, 11, EPD_COLOR_BLACK);  // direita
-    epd_display->epd_paint_drawLine(223, 3, 223, 9, EPD_COLOR_BLACK);   // positivo1
-    epd_display->epd_paint_drawLine(222, 3, 222, 9, EPD_COLOR_BLACK);   // positivo2
-
-    // battery voltage box
-    sprintf(buffer, "4200mV"); // Formata a tensao da bateria
-    // sprintf(buffer, "%ldmV", battery_voltage); // Formata a tensao da bateria
-    epd_display->epd_paint_showString(211, 15, (uint8_t *)buffer, EPD_FONT_SIZE8x6, EPD_COLOR_BLACK);
-    epd_display->epd_paint_drawLine(210, 13, 249, 13, EPD_COLOR_BLACK); // superior
-    epd_display->epd_paint_drawLine(210, 24, 249, 24, EPD_COLOR_BLACK); // inferior
-    epd_display->epd_paint_drawLine(209, 13, 209, 24, EPD_COLOR_BLACK); // esquerda
-    epd_display->epd_paint_drawLine(249, 13, 249, 24, EPD_COLOR_BLACK); // direita
-    epd_display->epd_paint_drawLine(208, 16, 208, 22, EPD_COLOR_BLACK); // positivo1
-    epd_display->epd_paint_drawLine(207, 16, 207, 22, EPD_COLOR_BLACK); // positivo2
-
-    // lines
-    epd_display->epd_paint_drawLine(125, 27, 125, 122, EPD_COLOR_BLACK);
-    epd_display->epd_paint_drawLine(1, 26, 249, 26, EPD_COLOR_BLACK);
-    // epd_display->epd_paint_drawLine(1, 111, 249, 111, EPD_COLOR_BLACK);
-
-    epd_display->epd_displayBW_partial(image_bw);
-
-    epd_display->sleep(EPD_DEEPSLEEP_MODE1);
-}
 void otaInit(void)
 {
-    ESP_LOGW("WIFI-STATUS", "passou 1");
     tryConnectToWiFi();
-    ESP_LOGW("WIFI-STATUS", "passou 2");
 
     if (wifi->isConnected())
     {
-        ESP_LOGW("WIFI-STATUS", "passou 3");
         esp_ip4_addr_t ip = wifi->getIP();
         ESP_LOGW("WIFI-STATUS", "Connected at IP: %d.%d.%d.%d", IP2STR(&ip));
         OtaUpdate otaUpdater;

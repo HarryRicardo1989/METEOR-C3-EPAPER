@@ -3,7 +3,6 @@
 #include "esp_ota_ops.h"
 #include "esp_https_ota.h"
 #include "sleep_timer.h"
-#include "blink_color.h"
 #include "rw_data.h"
 
 OtaUpdate::OtaUpdate()
@@ -13,8 +12,6 @@ OtaUpdate::OtaUpdate()
 
 esp_err_t OtaUpdate::start(const char *ota_url)
 {
-    set_rgb_led_interface(20, 20, 20);
-
     esp_http_client_config_t config = {};
     config.url = ota_url;
     config.event_handler = http_event_handler;
@@ -27,17 +24,31 @@ esp_err_t OtaUpdate::start(const char *ota_url)
     esp_err_t ret = esp_https_ota(&ota_config);
     if (ret == ESP_OK)
     {
-
-        set_rgb_led_interface(0, 500, 0);
-        ESP_LOGW("UPDATE_STATUS", "false");
-        save_nvs_int8_var(UPDATE_STATUS, false);
         ESP_LOGI("OtaUpdate", "OTA Update succeeded");
+        save_nvs_int8_var(UPDATE_STATUS, false);
+        ESP_LOGW("UPDATE_STATUS", "false");
+        validateAndUpdatePartition();
     }
     else
     {
-        ESP_LOGE("OtaUpdate", "OTA Update failed");
+        ESP_LOGE("OtaUpdate", "Falha na atualização OTA");
     }
     return ret;
+}
+void OtaUpdate::validateAndUpdatePartition()
+{
+    const esp_partition_t *configured = esp_ota_get_boot_partition();
+    const esp_partition_t *running = esp_ota_get_running_partition();
+
+    if (configured != running)
+    {
+        ESP_LOGW("OtaUpdate", "Configurado para boot de uma partição diferente da que está em execução");
+    }
+    else
+    {
+        ESP_LOGI("OtaUpdate", "Atualização bem-sucedida, configurando a nova partição como válida de boot");
+        esp_ota_mark_app_valid_cancel_rollback();
+    }
 }
 esp_err_t OtaUpdate::http_event_handler(esp_http_client_event_t *evt)
 {

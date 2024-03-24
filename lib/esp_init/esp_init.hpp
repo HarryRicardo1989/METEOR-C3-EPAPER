@@ -15,7 +15,6 @@
 #include "esp_log.h"
 #include "sleep_timer.h"
 #include "esp_mac.h"
-#include "blink_color.h"
 #include "connections.h"
 #include "WIFI/wifi_manager.hpp"
 #include "MQTT/MqttClient.hpp"
@@ -45,7 +44,6 @@ void init_SPI(void);
 void init_epDisplay(void);
 
 void tryConnectToWiFi(void);
-void display_meteor(float temperature, float pressure, int humidity, float i2cDewPoint, int battery_level, u_int32_t battery_voltage, float altitude);
 
 void capture_data(void);
 void otaInit(void);

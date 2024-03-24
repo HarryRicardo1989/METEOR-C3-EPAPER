@@ -14,13 +14,13 @@ namespace PROTOCOL
 
     void MqttPublish::publish_all()
     {
-        publish_temperature();
-        publish_humidity();
-        publish_pressure();
-        publish_dewpoint();
-        // publish_voltage();
-        // publish_charging();
-        // publish_charged();
+        // publish_temperature();
+        // publish_humidity();
+        // publish_pressure();
+        // publish_dewpoint();
+        //  publish_voltage();
+        //  publish_charging();
+        //  publish_charged();
         publish_to_site();
         /*         publish_level();
                 publish_critical();

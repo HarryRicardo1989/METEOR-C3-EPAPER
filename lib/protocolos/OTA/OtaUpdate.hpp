@@ -2,6 +2,7 @@
 
 #include "esp_err.h"
 #include "esp_http_client.h"
+#include "tasks_common.h"
 
 class OtaUpdate
 {
@@ -11,4 +12,5 @@ public:
 
 private:
     static esp_err_t http_event_handler(esp_http_client_event_t *evt); // Corrigido
+    void validateAndUpdatePartition();
 };

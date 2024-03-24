@@ -12,6 +12,8 @@ struct DeviceInfo
     char *wifi_ssid = (char *)"Unconnected";
     int bat_level = 0;
     uint32_t bat_mv = 0;
+    bool charging = false;
+    bool charged = false;
 };
 
 class EPD_UPDATE
@@ -21,9 +23,11 @@ private:
     EpaperDisplay *_epd_instance;
     DeviceInfo *_device_info;
     uint8_t image_bw[EPD_W_BUFF_SIZE * EPD_H];
+    uint16_t _colorBackgr;
+    uint16_t _colorLetter;
 
 public:
-    EPD_UPDATE(EpaperDisplay *epd_instance);
+    EPD_UPDATE(EpaperDisplay *epd_instance, uint16_t colorBackgr, uint16_t colorLetter);
     ~EPD_UPDATE();
 
     void displayClear();
