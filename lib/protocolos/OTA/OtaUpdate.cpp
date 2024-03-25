@@ -12,6 +12,7 @@ OtaUpdate::OtaUpdate()
 
 esp_err_t OtaUpdate::start(const char *ota_url)
 {
+
     esp_http_client_config_t config = {};
     config.url = ota_url;
     config.event_handler = http_event_handler;
@@ -26,12 +27,12 @@ esp_err_t OtaUpdate::start(const char *ota_url)
     {
         ESP_LOGI("OtaUpdate", "OTA Update succeeded");
         save_nvs_int8_var(UPDATE_STATUS, false);
-        ESP_LOGW("UPDATE_STATUS", "false");
+        ESP_LOGI("UPDATE_STATUS", "false");
         validateAndUpdatePartition();
     }
     else
     {
-        ESP_LOGE("OtaUpdate", "Falha na atualização OTA");
+        ESP_LOGE("OtaUpdate", "OTA FAIL");
     }
     return ret;
 }
@@ -42,7 +43,7 @@ void OtaUpdate::validateAndUpdatePartition()
 
     if (configured != running)
     {
-        ESP_LOGW("OtaUpdate", "Configurado para boot de uma partição diferente da que está em execução");
+        ESP_LOGI("OtaUpdate", "Configurado para boot de uma partição diferente da que está em execução");
     }
     else
     {

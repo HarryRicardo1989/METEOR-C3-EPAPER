@@ -14,71 +14,73 @@ extern "C"
 void app_main()
 {
     init();
-    create_sleep_timer(40);
+    create_sleep_timer(30);
 
-    ESP_LOGW("init", "inited");
+    ESP_LOGI("init", "inited");
 
     switch (wakeup_cause())
     {
     case WAKEUP_TOUCHPAD:
-        ESP_LOGW("ESP-WAKE-UP", "FROM Touch");
+        ESP_LOGI("ESP-WAKE-UP", "FROM Touch");
         ////create_sleep_timer(0);
         break;
     case WAKEUP_TIMER:
-        ESP_LOGW("ESP-WAKE-UP", "FROM TIMER");
+        ESP_LOGI("ESP-WAKE-UP", "FROM TIMER");
         init_fom_timer();
         vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
         create_sleep_timer(0);
+
         break;
     case WAKEUP_BT:
-        ESP_LOGW("ESP-WAKE-UP", "WAKEUP_BT");
+        ESP_LOGI("ESP-WAKE-UP", "WAKEUP_BT");
         // create_sleep_timer(0);
         break;
     case WAKEUP_EXT0:
-        ESP_LOGW("ESP-WAKE-UP", "WAKEUP_EXT0");
+        ESP_LOGI("ESP-WAKE-UP", "WAKEUP_EXT0");
         // create_sleep_timer(0);
         break;
     case WAKEUP_EXT1:
-        ESP_LOGW("ESP-WAKE-UP", "WAKEUP_EXT1");
+        ESP_LOGI("ESP-WAKE-UP", "WAKEUP_EXT1");
         // create_sleep_timer(0);
         break;
     case WAKEUP_ULP:
-        ESP_LOGW("ESP-WAKE-UP", "WAKEUP_ULP");
+        ESP_LOGI("ESP-WAKE-UP", "WAKEUP_ULP");
         // create_sleep_timer(0);
         break;
     case WAKEUP_GPIO:
-        ESP_LOGW("ESP-WAKE-UP", "WAKEUP_GPIO");
+        ESP_LOGI("ESP-WAKE-UP", "WAKEUP_GPIO");
 
         // create_sleep_timer(0);
         break;
     case WAKEUP_UART:
-        ESP_LOGW("ESP-WAKE-UP", "WAKEUP_UART");
+        ESP_LOGI("ESP-WAKE-UP", "WAKEUP_UART");
         // create_sleep_timer(0);
         break;
     case WAKEUP_WIFI:
-        ESP_LOGW("ESP-WAKE-UP", "WAKEUP_WIFI");
+        ESP_LOGI("ESP-WAKE-UP", "WAKEUP_WIFI");
         // create_sleep_timer(0);
         break;
     case WAKEUP_COCPU:
-        ESP_LOGW("ESP-WAKE-UP", "WAKEUP_COCPU");
+        ESP_LOGI("ESP-WAKE-UP", "WAKEUP_COCPU");
         // create_sleep_timer(0);
         break;
     case WAKEUP_ALL:
-        ESP_LOGW("ESP-WAKE-UP", "WAKEUP_ALL");
+        ESP_LOGI("ESP-WAKE-UP", "WAKEUP_ALL");
         // create_sleep_timer(0);
         break;
     case WAKEUP_UNDEFINED:
-        ESP_LOGW("ESP-WAKE-UP", "WAKEUP_UNDEFINED");
+        ESP_LOGI("ESP-WAKE-UP", "WAKEUP_UNDEFINED");
         create_sleep_timer(10);
         save_nvs_string_var(MODEL, DEFAULT_MODEL);
         save_nvs_u32_var(TIME_TO_WAKE_UP, 40);
         save_nvs_string_var(WIFISSID, (char *)"Unconnected");
         save_nvs_string_var(WIFI_IP, (char *)"Unconnected");
         init_restarted();
+
         break;
 
     default:
-        ESP_LOGW("ESP-WAKE-UP", "RESET ERROR %d", wakeup_cause());
+        ESP_LOGI("ESP-WAKE-UP", "RESET ERROR %d", wakeup_cause());
         init_restarted();
         create_sleep_timer(0);
 

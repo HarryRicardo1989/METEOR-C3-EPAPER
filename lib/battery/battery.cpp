@@ -15,13 +15,7 @@ namespace BATTERY
             battery_level = kf_battery.filter((adc.GetVoltage() * (((R1 + R1 + R2) / R2) /* V_CORRECTION*/)));
             vTaskDelay(50 / configTICK_RATE_HZ);
         }
-        // battery_level /= count;
-        //  ESP_LOGI("BAT", "ADC-RAW: %d", adc.GetRaw());
-        //  ESP_LOGI("BAT", "ADC-GetVoltage: %d", adc.GetVoltage());
         battery_map = (battery_level - map_in_min) / (float)(map_in_max - map_in_min) * (map_out_max - map_out_min) + map_out_min;
-        //  ESP_LOGI("BAT", "BAT_ V_div: %d", battery_level);
-        //   ESP_LOGI("BAT", "BAT multip: %d", static_cast<int>(round(battery_level * 1.33)));
-        //   ESP_LOGI("BAT", "BAT_ Voltage: %d", (int)floor(battery_map));
 
         // if (battery_level >= 4200)
         //{

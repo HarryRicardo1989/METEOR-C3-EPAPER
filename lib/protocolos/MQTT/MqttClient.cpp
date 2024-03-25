@@ -114,17 +114,17 @@ namespace PROTOCOL
                     else
                     {
 
-                        ESP_LOGW("COMMAND", "%s", received_data);
-                        save_nvs_int8_var(UPDATE_STATUS, true);
-                        save_nvs_string_var(OTA_URL, received_data);
-                        ESP_LOGW("UPDATE_STATUS", "true");
                         char *client_ID = read_nvs_string_var(CLIENT_ID);
                         char *topic = new char[100];
                         instance->concat_string(topic, client_ID, MQTT_SUBTOPIC_OTA);
+                        ESP_LOGI("COMMAND", "%s", received_data);
+                        save_nvs_int8_var(UPDATE_STATUS, true);
+                        save_nvs_string_var(OTA_URL, received_data);
+                        ESP_LOGI("UPDATE_STATUS", "true");
                         instance->publish(topic, (char *)"", 2, true);
-
-                        vTaskDelay(3 * PORT_TICK_PERIOD_SECONDS);
+                        vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
                         esp_restart();
+                        ESP_LOGI("UPDATE_STATUS", "restart");
                     }
                     // Lembre-se de liberar a memória alocada quando não precisar mais
                     free(received_data);

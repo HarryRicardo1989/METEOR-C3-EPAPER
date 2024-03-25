@@ -18,7 +18,7 @@ uint8_t EpaperDisplay::init()
     if (this->_hibernating)
     {
         reset();
-        ESP_LOGW("EPD-INIT", "reset");
+        ESP_LOGI("EPD-INIT", "reset");
         waitForIdle(); // Espera pelo pino busy
     }
 
@@ -69,7 +69,7 @@ uint8_t EpaperDisplay::init()
     if (epd_power_on())
         return 1;
 
-    ESP_LOGW("EPD-INIT", "OK");
+    ESP_LOGI("EPD-INIT", "OK");
     return 0;
 }
 
@@ -282,7 +282,6 @@ void EpaperDisplay::epd_displayBW_partial(uint8_t *Image)
 
     Width = EPD_H;
     Height = EPD_W_BUFF_SIZE;
-
     epd_setpos(0, 0);
     epd_write_reg(0x24);
     epd_write_data_(Image, Width * Height);

@@ -21,9 +21,15 @@
 TaskHandle_t task_sleep_timer_handle = NULL;
 
 int tSleep_timer_time_s = 30;
+int flag_timer = false;
 
 void create_sleep_timer(int sleep_timer_time_s)
 {
+
+    if (task_sleep_timer_handle != NULL)
+    {
+        delete_sleep_timer();
+    }
     tSleep_timer_time_s = sleep_timer_time_s;
 
     esp_sleep_pd_config(ESP_PD_DOMAIN_CPU, ESP_PD_OPTION_AUTO);

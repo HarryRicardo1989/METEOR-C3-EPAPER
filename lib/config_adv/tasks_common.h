@@ -104,3 +104,6 @@
  * @brief precisa gravar todos os NVS antes de rodar
  *
  */
+
+#define OTA_MSG_SUCCESS (char *)"Update Successfull..."
+#define OTA_MSG_UPDATE (char *)"Updating..."

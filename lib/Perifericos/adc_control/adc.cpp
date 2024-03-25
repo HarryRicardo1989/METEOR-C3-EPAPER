@@ -8,10 +8,10 @@ namespace ADC
         adc_oneshot_bitwidth = bitwidth;
         adc_oneshot_attenuation = attenuation;
         adc_oneshot_channel = channel;
-        ESP_LOGW("ADC", "adc_unit: %d", adc_unit);
-        ESP_LOGW("ADC", "bitwidth: %d", bitwidth);
-        ESP_LOGW("ADC", "attenuation: %d", attenuation);
-        ESP_LOGW("ADC", "channel: %d", channel);
+        // ESP_LOGI("ADC", "adc_unit: %d", adc_unit);
+        // ESP_LOGI("ADC", "bitwidth: %d", bitwidth);
+        // ESP_LOGI("ADC", "attenuation: %d", attenuation);
+        // ESP_LOGI("ADC", "channel: %d", channel);
 
         _calEnabled = _checkCalFuse();
 

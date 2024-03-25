@@ -203,7 +203,7 @@ void EPD_UPDATE::updatingfw(char *msg)
 {
     wakeup();
     this->_epd_instance->epd_paint_clear(this->_colorBackgr);
-    this->_epd_instance->epd_paint_showString(10, 113, (uint8_t *)msg, EPD_FONT_SIZE24x12, this->_colorLetter);
+    this->_epd_instance->epd_paint_showString(10, 48, (uint8_t *)msg, EPD_FONT_SIZE24x12, this->_colorLetter);
     displayUpdate();
 
     sleep();

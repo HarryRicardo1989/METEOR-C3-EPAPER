@@ -22,7 +22,7 @@ void init(void)
     ESP_ERROR_CHECK(ret);
     if (esp_reset_reason() == ESP_RST_DEEPSLEEP)
     {
-        printf("\n\nACORDEI\n\n");
+        ESP_LOGI("WAKEUP", "WAKE");
 
         deisolate_gpio();
     }
@@ -34,7 +34,7 @@ void init(void)
 
     if (read_nvs_int8_var(UPDATE_STATUS))
     {
-        ESP_LOGW("OTA-STATUS", "UpdateStatus true");
+        ESP_LOGI("OTA-STATUS", "UpdateStatus true");
         otaInit();
         while (true)
         {
@@ -44,23 +44,21 @@ void init(void)
     device_info_raw = new DeviceInfo;
 
     init_i2c();
-    ESP_LOGW("init_i2c", "Init");
+    ESP_LOGI("init_i2c", "Init");
     init_SPI();
-    ESP_LOGW("init_SPI", "Init");
+    ESP_LOGI("init_SPI", "Init");
     init_epDisplay();
-    ESP_LOGW("init_epDisplay", "Init");
+    ESP_LOGI("init_epDisplay", "Init");
 }
 void init_restarted()
 {
-    ESP_LOGW("init_restarted", "Init");
-
+    ESP_LOGI("init_restarted", "Init");
     epd_update->display_make_lines();
     epd_update->display_make();
-    init_routines();
 }
 void init_fom_timer(void)
 {
-    ESP_LOGW("init_fom_timer", "Init");
+    ESP_LOGI("init_fom_timer", "Init");
     init_routines();
 }
 void init_routines(void)
@@ -69,6 +67,7 @@ void init_routines(void)
     generate_client_ID();
     epd_update->display_make();
     capture_data();
+
     tryConnectToWiFi();
 
     vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
@@ -76,7 +75,7 @@ void init_routines(void)
     if (wifi->isConnected())
     {
         esp_ip4_addr_t ip = wifi->getIP();
-        ESP_LOGW("WIFI-STATUS", "Connected at IP: %d.%d.%d.%d", IP2STR(&ip));
+        ESP_LOGI("WIFI-STATUS", "Connected at IP: %d.%d.%d.%d", IP2STR(&ip));
         mqtt_initialize->connect();
         mqtt_initialize->subscribe();
         mqtt_initialize->publish_full_data();
@@ -107,6 +106,7 @@ void capture_data(void)
     uint32_t bat_mv = read_nvs_uint32_var(BATTERY_VALUE);
     save_nvs_string_var(TEMPERATURE, convert_float_to_string(i2cTemperature));
     save_nvs_string_var(HUMIDITY, convert_value_to_string(i2cHumidity));
+    save_nvs_string_var(DEWPOINT, convert_value_to_string(i2cDewPoint));
     save_nvs_string_var(PRESSURE, convert_float_to_string(i2cPressure));
     save_nvs_string_var(ALTITUDE, convert_float_to_string(i2cAltitude));
 
@@ -124,51 +124,45 @@ void capture_data(void)
     device_info_raw->charging = read_nvs_int8_var(BATTERY_CHARGING_STATUS);
 
     epd_update->display_partial(device_info_raw);
-    ESP_LOGE("all displayed", "ok");
-
-    if (wifi->isConnected())
-    {
-        char buffer[20];
-        esp_ip4_addr_t ip = wifi->getIP();
-        sprintf(buffer, "IP:%d.%d.%d.%d", IP2STR(&ip));
-    }
 }
 
 void tryConnectToWiFi()
 {
-    wifi = new WiFiManager();
-    mqtt_initialize = new PROTOCOL::MqttInit();
-    const size_t wifiCredentialsCount = sizeof(wifiCredentials) / sizeof(wifiCredentials[0]);
-
-    for (int i = 0; i < wifiCredentialsCount; i++)
+    if (!wifi->isConnected())
     {
-        wifi->connect(wifiCredentials[i].ssid, wifiCredentials[i].password);
-        int attempt = 0;
-        while (!wifi->isConnected() && attempt < 6)
-        {
-            ESP_LOGW("WIFI-STATUS", "Attempting to connect to %s", wifiCredentials[i].ssid);
-            vTaskDelay(500 * portTICK_PERIOD_MS);
-            attempt++;
-        }
-        if (wifi->isConnected())
-        {
-            ESP_LOGI("WIFI-STATUS", "Connected to %s", wifiCredentials[i].ssid);
-            char buffer[20];
-            esp_ip4_addr_t ip = wifi->getIP();
-            sprintf(buffer, "IP:%d.%d.%d.%d", IP2STR(&ip));
-            save_nvs_string_var(WIFISSID, (char *)wifiCredentials[i].ssid);
-            save_nvs_string_var(WIFI_IP, buffer);
-            create_sleep_timer(10);
+        wifi = new WiFiManager();
+        mqtt_initialize = new PROTOCOL::MqttInit();
+        const size_t wifiCredentialsCount = sizeof(wifiCredentials) / sizeof(wifiCredentials[0]);
 
-            return; // Conexão bem-sucedida, sai da função
-        }
+        for (int i = 0; i < wifiCredentialsCount; i++)
+        {
+            wifi->connect(wifiCredentials[i].ssid, wifiCredentials[i].password);
+            int attempt = 0;
+            while (!wifi->isConnected() && attempt < 6)
+            {
+                ESP_LOGI("WIFI-STATUS", "Attempting to connect to %s", wifiCredentials[i].ssid);
+                vTaskDelay(500 * portTICK_PERIOD_MS);
+                attempt++;
+            }
+            if (wifi->isConnected())
+            {
+                char buffer[20];
+                esp_ip4_addr_t ip = wifi->getIP();
+                ESP_LOGI("WIFI-STATUS", "Connected to %s", wifiCredentials[i].ssid);
+                sprintf(buffer, "IP:%d.%d.%d.%d", IP2STR(&ip));
+                save_nvs_string_var(WIFISSID, (char *)wifiCredentials[i].ssid);
+                save_nvs_string_var(WIFI_IP, buffer);
 
-        wifi->disconnect();
-        save_nvs_string_var(WIFISSID, (char *)"Unconnected");
-        save_nvs_string_var(WIFI_IP, (char *)"Unconnected");
+                return; // Conexão bem-sucedida, sai da função
+            }
+
+            wifi->disconnect();
+        }
     }
 
-    ESP_LOGW("WIFI-STATUS", "Failed to connect to any network");
+    save_nvs_string_var(WIFI_IP, (char *)"Unconnected");
+    save_nvs_string_var(WIFISSID, (char *)"Unconnected");
+    ESP_LOGE("WIFI-STATUS", "Failed to connect to any network");
 }
 void generate_client_ID(void)
 {
@@ -280,13 +274,13 @@ void init_epDisplay(void)
         epd_display = new EpaperDisplay(spi, DISP_DC, DISP_RES, DISP_BUSY);
         epd_update = new EPD_UPDATE(epd_display, EPD_COLOR_WHITE, EPD_COLOR_BLACK);
     }
-    ESP_LOGW("EPD-INIT", "OK");
+    ESP_LOGI("EPD-INIT", "OK");
 }
 void init_i2c(void)
 {
     i2c = new PROTOCOL::I2c(I2C_NUM_0);
     i2c->InitMaster(SDA_PIN, SCL_PIN, I2C_CLK_SPEED_HZ, true, true);
-    ESP_LOGW("I2C-INIT", "OK");
+    ESP_LOGI("I2C-INIT", "OK");
 }
 
 void init_SPI(void)
@@ -294,7 +288,7 @@ void init_SPI(void)
     spi = new PROTOCOL::Spi;
     spi->Init(SPI2_HOST, SPI_MISO, SPI_SDA, SPI_SCL);
     spi->RegisterDevice(MODE, SPI_CS, ADDR_LENGTH, SPI_DataSize, CLOCK_SPEED);
-    ESP_LOGW("SPI-INIT", "OK");
+    ESP_LOGI("SPI-INIT", "OK");
 }
 
 void otaInit(void)
@@ -304,11 +298,18 @@ void otaInit(void)
     if (wifi->isConnected())
     {
         esp_ip4_addr_t ip = wifi->getIP();
-        ESP_LOGW("WIFI-STATUS", "Connected at IP: %d.%d.%d.%d", IP2STR(&ip));
+        ESP_LOGI("WIFI-STATUS", "Connected at IP: %d.%d.%d.%d", IP2STR(&ip));
+        init_SPI();
+        ESP_LOGI("init_SPI", "Init");
+        init_epDisplay();
+        ESP_LOGI("init_epDisplay", "Init");
         OtaUpdate otaUpdater;
+        create_sleep_timer(120);
+        epd_update->updatingfw(OTA_MSG_UPDATE);
         otaUpdater.start(read_nvs_string_var(OTA_URL));
         vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
-
+        epd_update->updatingfw(OTA_MSG_SUCCESS);
+        vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
         esp_restart();
     }
 }
