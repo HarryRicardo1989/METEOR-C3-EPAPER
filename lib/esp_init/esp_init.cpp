@@ -257,7 +257,7 @@ void battery_things(void)
     BATTERY::BatteryStatus bat_status = BATTERY::BatteryStatus();
     uint32_t bat_mv;
     uint8_t bat_level;
-    bat_mv = bat_status.battery_read(100);
+    bat_mv = bat_status.battery_read(AVERAGE_BATTERY_COUNTER);
     bat_level = bat_status.battery_percent(bat_mv);
     bool charged = bat_status.battery_charged();
     bool charging = bat_status.battery_charging();
@@ -306,10 +306,58 @@ void otaInit(void)
         OtaUpdate otaUpdater;
         create_sleep_timer(120);
         epd_update->updatingfw(OTA_MSG_UPDATE);
-        otaUpdater.start(read_nvs_string_var(OTA_URL));
+        char *url = nullptr;
+        char *crc = nullptr;
+        parseJson(read_nvs_string_var(OTA_URL), &url, &crc);
+        esp_err_t err = otaUpdater.start(url, crc);
+        if (err == ESP_OK)
+        {
+            save_nvs_int8_var(UPDATE_STATUS, false);
+            epd_update->updatingfw(OTA_MSG_SUCCESS);
+            vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
+            esp_restart();
+        }
+        else
+        {
+            save_nvs_int8_var(UPDATE_STATUS, false);
+            epd_update->updatingfw(OTA_MSG_FAIL);
+            esp_restart();
+        }
+
         vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
-        epd_update->updatingfw(OTA_MSG_SUCCESS);
-        vTaskDelay(1 * PORT_TICK_PERIOD_SECONDS);
-        esp_restart();
     }
+}
+
+void parseJson(const char *jsonString, char **url, char **crc)
+{
+    cJSON *json = cJSON_Parse(jsonString);
+    if (json == nullptr)
+    {
+        const char *error_ptr = cJSON_GetErrorPtr();
+        if (error_ptr != nullptr)
+        {
+            ESP_LOGI("JSONERROR", "Error before: %s\n", error_ptr);
+            save_nvs_int8_var(UPDATE_STATUS, false);
+            epd_update->updatingfw(OTA_MSG_FAIL);
+            esp_restart();
+        }
+        return;
+    }
+
+    const cJSON *urlJson = cJSON_GetObjectItemCaseSensitive(json, "url");
+    const cJSON *crcJson = cJSON_GetObjectItemCaseSensitive(json, "crc");
+
+    if (cJSON_IsString(urlJson) && (urlJson->valuestring != nullptr))
+    {
+        *url = strdup(urlJson->valuestring);
+        ESP_LOGI("URL_parse", "%s", *url);
+    }
+
+    if (cJSON_IsString(crcJson) && (crcJson->valuestring != nullptr))
+    {
+        *crc = strdup(crcJson->valuestring);
+        ESP_LOGI("CRC_parse", "%s", *crc);
+    }
+
+    cJSON_Delete(json);
 }

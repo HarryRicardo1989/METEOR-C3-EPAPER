@@ -29,6 +29,7 @@
 #include "OTA/OtaUpdate.hpp"
 #include "mqtt_task.hpp"
 #include "update_display.hpp"
+#include "cJSON.h"
 
 void init(void);
 void init_routines(void);
@@ -47,3 +48,4 @@ void tryConnectToWiFi(void);
 
 void capture_data(void);
 void otaInit(void);
+void parseJson(const char *jsonString, char **url, char **crc);

@@ -12,7 +12,7 @@ namespace BATTERY
         ADC::AdcController adc = ADC::AdcController(ADC_UNIT_1, ADC_BITWIDTH_12, ADC_ATTEN_DB_11, ADC_CHANNEL_0);
         for (uint16_t i = 0; i < count; i++)
         {
-            battery_level = kf_battery.filter((adc.GetVoltage() * (((R1 + R1 + R2) / R2) /* V_CORRECTION*/)));
+            battery_level = kf_battery.filter((adc.GetVoltage() * (((R1 + R1 + R2) / R2) * V_CORRECTION)));
             vTaskDelay(50 / configTICK_RATE_HZ);
         }
         battery_map = (battery_level - map_in_min) / (float)(map_in_max - map_in_min) * (map_out_max - map_out_min) + map_out_min;
@@ -27,16 +27,17 @@ namespace BATTERY
     int BatteryStatus::battery_percent(uint16_t voltage_mV)
     {
         const std::vector<std::pair<uint16_t, int>> voltageToPercentage = {
-            {4000, 100},
-            {3700, 90},
-            {3600, 80},
-            {3530, 70},
-            {3450, 60},
-            {3350, 50},
-            {3250, 40},
-            {3150, 30},
-            {3000, 20},
-            {2800, 10},
+            {4200, 100},
+            {3900, 90},
+            {3750, 80},
+            {3620, 70},
+            {3500, 60},
+            {3400, 50},
+            {3300, 40},
+            {3200, 30},
+            {3110, 20},
+            {3050, 10},
+            {3000, 00},
         };
 
         if (voltage_mV >= voltageToPercentage[0].first)

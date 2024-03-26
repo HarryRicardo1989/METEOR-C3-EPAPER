@@ -20,7 +20,7 @@
  * 3ºnumber  MAINTENANCE release number (bugfixes only)
  * 4ºnumber  BUILD NUMBER (Hardware release)
  */
-#define FIRMWARE_VERSION (char *)"0.1.2"
+#define FIRMWARE_VERSION (char *)"0.1.4"
 #define MANUFACTORY (char *)"RICARDOPASCHOALI"
 #define MAC_ADDRESS (char *)"mac"
 
@@ -59,7 +59,7 @@
 #define AVERAGE_BATTERY_COUNTER 100
 #define R1 47e3
 #define R2 47e3
-#define V_CORRECTION 0.986
+#define V_CORRECTION 1.03
 /**
  * @brief NVS/ACTIONS defines NAMES
  *
@@ -76,6 +76,7 @@
 #define WIFISSID (char *)"wifiSSID"
 #define WIFI_IP (char *)"wifiIP"
 #define CLIENT_ID (char *)"clientID"
+#define EXPECTED_CRC (char *)"expectedCRC"
 
 /**
  * @brief AES Crypto config
@@ -106,4 +107,5 @@
  */
 
 #define OTA_MSG_SUCCESS (char *)"Update Successfull..."
+#define OTA_MSG_FAIL (char *)"Update Fail..."
 #define OTA_MSG_UPDATE (char *)"Updating..."
