@@ -28,7 +28,7 @@ namespace BATTERY
     {
         const std::vector<std::pair<uint16_t, int>> voltageToPercentage = {
             {4200, 100},
-            {3900, 90},
+            {4000, 90},
             {3750, 80},
             {3620, 70},
             {3500, 60},

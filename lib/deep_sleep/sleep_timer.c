@@ -21,7 +21,6 @@
 TaskHandle_t task_sleep_timer_handle = NULL;
 
 int tSleep_timer_time_s = 30;
-int flag_timer = false;
 
 void create_sleep_timer(int sleep_timer_time_s)
 {
@@ -36,7 +35,7 @@ void create_sleep_timer(int sleep_timer_time_s)
     esp_sleep_pd_config(ESP_PD_DOMAIN_RC_FAST, ESP_PD_OPTION_AUTO);
     // esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_AUTO);
     esp_sleep_enable_timer_wakeup(read_nvs_uint32_var(TIME_TO_WAKE_UP) * SECONDS);
-    printf("criou novo timer %d segundos \n", tSleep_timer_time_s);
+    ESP_LOGI("SLEEP_TIMER", "TIMER Create: %ds", tSleep_timer_time_s);
     if (tSleep_timer_time_s == 0)
     {
         init_sleep();
@@ -57,7 +56,8 @@ void vTask_sleep_timer(void *pvParameters)
 void delete_sleep_timer(void)
 {
     vTaskDelete(task_sleep_timer_handle);
-    printf("apagou timer de %d segundos \n", tSleep_timer_time_s);
+    task_sleep_timer_handle = NULL;
+    ESP_LOGI("SLEEP_TIMER", "TIMER Delete: %ds", tSleep_timer_time_s);
 }
 
 void init_sleep(void)

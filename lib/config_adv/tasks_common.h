@@ -72,12 +72,14 @@
 #define ALTITUDE (char *)"altitude"
 #define DEWPOINT (char *)"dewPoint"
 #define UPDATE_STATUS (char *)"updateStatus"
+#define EXPECTED_CRC (char *)"expectedCRC"
 #define OTA_URL (char *)"otaUrl"
 #define WIFISSID (char *)"wifiSSID"
 #define WIFI_IP (char *)"wifiIP"
 #define CLIENT_ID (char *)"clientID"
-#define EXPECTED_CRC (char *)"expectedCRC"
 
+#define INIT_COUNTER (char *)"initCounter"
+#define INIT_COUNTER_NUMBER 5
 /**
  * @brief AES Crypto config
  *
@@ -109,3 +111,4 @@
 #define OTA_MSG_SUCCESS (char *)"Update Successfull..."
 #define OTA_MSG_FAIL (char *)"Update Fail..."
 #define OTA_MSG_UPDATE (char *)"Updating..."
+#define OTA_STATUS_SUCCESS (char *)"OtaSuccess"

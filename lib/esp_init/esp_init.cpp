@@ -26,6 +26,29 @@ void init(void)
 
         deisolate_gpio();
     }
+    int ota_status = read_nvs_int8_var(OTA_STATUS_SUCCESS);
+    if (ota_status != 0 && ota_status != 1)
+    {
+        save_nvs_int8_var(OTA_STATUS_SUCCESS, 1);
+    }
+    if (ota_status)
+    {
+        save_nvs_int8_var(UPDATE_STATUS, false);
+        save_nvs_int8_var(OTA_STATUS_SUCCESS, false);
+        ESP_ERROR_CHECK(esp_ota_mark_app_valid_cancel_rollback());
+        ESP_LOGI("OtaUpdate", "Atualização bem-sucedida, configurando a nova partição como válida de boot");
+    }
+    else
+    {
+        ESP_LOGI("OtaUpdate", "No OTA");
+    }
+
+    int init_counter = read_nvs_int8_var(INIT_COUNTER);
+    if (init_counter <= 0 && init_counter >= INIT_COUNTER_NUMBER + 1)
+    {
+        save_nvs_int8_var(INIT_COUNTER, 0);
+    }
+
     int updateStatus = read_nvs_int8_var(UPDATE_STATUS);
     if (updateStatus != 0 && updateStatus != 1)
     {
@@ -54,18 +77,34 @@ void init_restarted()
 {
     ESP_LOGI("init_restarted", "Init");
     epd_update->display_make_lines();
-    epd_update->display_make();
 }
 void init_fom_timer(void)
 {
-    ESP_LOGI("init_fom_timer", "Init");
-    init_routines();
+
+    int init_counter = read_nvs_int8_var(INIT_COUNTER);
+    if (init_counter >= INIT_COUNTER_NUMBER)
+    {
+        save_nvs_int8_var(INIT_COUNTER, 0);
+        battery_things();
+        generate_client_ID();
+        epd_update->display_make();
+        init_all_data();
+        ESP_LOGI("init_fom_timer", "init_all_data");
+    }
+    else
+    {
+        battery_things();
+        generate_client_ID();
+        epd_update->display_make();
+        capture_data();
+
+        ESP_LOGI("init_fom_timer", "init_only_display Counter:%d", init_counter);
+        init_counter++;
+        save_nvs_int8_var(INIT_COUNTER, init_counter);
+    }
 }
-void init_routines(void)
+void init_all_data(void)
 {
-    battery_things();
-    generate_client_ID();
-    epd_update->display_make();
     capture_data();
 
     tryConnectToWiFi();

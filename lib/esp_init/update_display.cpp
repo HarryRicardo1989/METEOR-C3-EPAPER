@@ -119,7 +119,7 @@ void EPD_UPDATE::display_partial(DeviceInfo *device_info)
     this->_epd_instance->epd_displayBW_partial(this->image_bw);
 
     sleep();
-    ESP_LOGE("all displayed", "ok");
+    ESP_LOGI("EPD_UPDATE", "display_partial ok");
 
     return;
 }

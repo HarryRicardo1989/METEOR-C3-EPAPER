@@ -13,7 +13,6 @@ private:
     static OtaUpdate *instance; // Ponteiro para armazenar a instância da classe
     uint32_t crc = 0;           // Variável para armazenar o CRC acumulado
     uint32_t expected_crc = 0;  // Adiciona membro para armazenar o CRC esperado
-    esp_https_ota_handle_t ota_handle = nullptr;
 
 public:
     OtaUpdate();

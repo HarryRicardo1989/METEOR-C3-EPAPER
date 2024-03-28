@@ -13,6 +13,11 @@ OtaUpdate::OtaUpdate() : crc(0)
 
 esp_err_t OtaUpdate::start(const char *ota_url, const char *expected_crc_hex)
 {
+    // ESP_ERROR_CHECK(esp_ota_mark_app_valid_cancel_rollback());
+    const esp_partition_t *configured = esp_ota_get_boot_partition();
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    ESP_LOGI("OtaUpdate", "configured partition %" PRIu32, configured->address);
+    ESP_LOGI("OtaUpdate", "running partition %" PRIu32, running->address);
     OtaUpdate::instance = this;
     this->crc = 0;                                               // Reinicia o CRC para zero
     this->expected_crc = strtoul(expected_crc_hex, nullptr, 16); // Converte CRC de hex para uint32_t
@@ -25,14 +30,16 @@ esp_err_t OtaUpdate::start(const char *ota_url, const char *expected_crc_hex)
     ota_config.http_config = &config;
 
     ESP_LOGI("OtaUpdate", "Attempting to download update from %s", config.url);
-    esp_https_ota_begin(&ota_config, &ota_handle);
     esp_err_t ret = esp_https_ota(&ota_config);
     if (ret != ESP_OK)
     {
         ESP_LOGE("OtaUpdate", "OTA failed with error: %s", esp_err_to_name(ret));
-        return ret;
+        return ESP_FAIL;
     }
-    return ret;
+    else
+    {
+        return ESP_OK;
+    }
 }
 void OtaUpdate::validateAndUpdatePartition()
 {
@@ -42,12 +49,11 @@ void OtaUpdate::validateAndUpdatePartition()
     if (configured != running)
     {
         ESP_LOGI("OtaUpdate", "Configurado para boot de uma partição diferente da que está em execução");
-        esp_ota_mark_app_invalid_rollback_and_reboot();
     }
     else
     {
         ESP_LOGI("OtaUpdate", "Atualização bem-sucedida, configurando a nova partição como válida de boot");
-        esp_ota_mark_app_valid_cancel_rollback();
+        ESP_ERROR_CHECK(esp_ota_mark_app_valid_cancel_rollback());
     }
 }
 esp_err_t OtaUpdate::http_event_handler(esp_http_client_event_t *evt)
@@ -77,36 +83,26 @@ esp_err_t OtaUpdate::http_event_handler(esp_http_client_event_t *evt)
         break;
     case HTTP_EVENT_ON_FINISH:
         ESP_LOGI("OtaUpdate", "HTTP_EVENT_ON_FINISH");
-        if (OtaUpdate::instance->crc != OtaUpdate::instance->expected_crc)
-        {
-            ESP_LOGE("OtaUpdate", "CRC mismatch: Calculated CRC = %" PRIu32 ", Expected CRC = %" PRIu32, OtaUpdate::instance->crc, OtaUpdate::instance->expected_crc);
-            esp_ota_mark_app_invalid_rollback_and_reboot();
-        }
-        else
-        {
-            ESP_LOGI("OtaUpdate", "CRC match: Update is valid.");
-            ESP_LOGI("OtaUpdate", " Expected CRC: %" PRIu32, OtaUpdate::instance->expected_crc);
-            ESP_LOGI("OtaUpdate", " Current CRC:  %" PRIu32, OtaUpdate::instance->crc);
 
-            esp_ota_mark_app_valid_cancel_rollback();
-            OtaUpdate::instance->validateAndUpdatePartition();
-        }
         break;
     case HTTP_EVENT_DISCONNECTED:
         ESP_LOGI("OtaUpdate", "HTTP_EVENT_DISCONNECTED");
         if (OtaUpdate::instance->crc != OtaUpdate::instance->expected_crc)
         {
             ESP_LOGE("OtaUpdate", "CRC mismatch: Calculated CRC = %" PRIu32 ", Expected CRC = %" PRIu32, OtaUpdate::instance->crc, OtaUpdate::instance->expected_crc);
-            esp_ota_mark_app_invalid_rollback_and_reboot();
+            save_nvs_int8_var(OTA_STATUS_SUCCESS, false);
+            return ESP_FAIL;
         }
         else
         {
             ESP_LOGI("OtaUpdate", "CRC match: Update is valid.");
             ESP_LOGI("OtaUpdate", " Expected CRC: %" PRIu32, OtaUpdate::instance->expected_crc);
             ESP_LOGI("OtaUpdate", " Current CRC:  %" PRIu32, OtaUpdate::instance->crc);
+            save_nvs_int8_var(OTA_STATUS_SUCCESS, true);
 
-            esp_ota_mark_app_valid_cancel_rollback();
-            OtaUpdate::instance->validateAndUpdatePartition();
+            ESP_LOGI("OtaUpdate", "Atualização bem-sucedida, configurando a nova partição como válida de boot");
+
+            return ESP_OK;
         }
         break;
     default:

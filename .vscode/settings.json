@@ -3,6 +3,7 @@
         "*.tcc": "cpp",
         "cstring": "cpp",
         "epaper.h": "c",
-        "tasks_common.h": "c"
+        "tasks_common.h": "c",
+        "sleep_timer.h": "c"
     }
 }

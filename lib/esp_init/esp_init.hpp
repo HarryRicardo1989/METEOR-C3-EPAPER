@@ -29,14 +29,18 @@
 #include "OTA/OtaUpdate.hpp"
 #include "mqtt_task.hpp"
 #include "update_display.hpp"
+#include "esp_ota_ops.h"
 #include "cJSON.h"
 
 void init(void);
-void init_routines(void);
+
+void init_only_display(void);
+void init_all_data(void);
+
 void init_restarted(void);
 void init_fom_timer(void);
+
 void generate_client_ID(void);
-void scanI2CDevices(int sdaPin, int sclPin);
 char *convert_value_to_string(int value);
 char *convert_float_to_string(float value);
 void battery_things(void);
