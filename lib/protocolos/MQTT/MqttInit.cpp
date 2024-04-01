@@ -26,13 +26,11 @@ namespace PROTOCOL
     void MqttInit::subscribe()
     {
         auto &mqtt_client_instance = MqttClient::getInstance();
-        std::string client_id = read_nvs_string_var(CLIENT_ID);
-        size_t client_id_size = client_id.size();
-        size_t total_size = client_id_size + strlen(MQTT_SUBTOPIC_OTA) + 1;
-        mqttsub_scription.resize(total_size);
-        std::memcpy(mqttsub_scription.data(), client_id.c_str(), client_id_size);
-        std::strcat(mqttsub_scription.data(), MQTT_SUBTOPIC_OTA);
-        mqtt_client_instance.subscribe(mqttsub_scription.data());
+        char *client_id = read_nvs_string_var(CLIENT_ID);
+        std::string mqtt_subscription(client_id);
+        mqtt_subscription += MQTT_SUBTOPIC_OTA;
+        mqtt_client_instance.subscribe(mqtt_subscription.c_str());
+        free(client_id);
     }
     void MqttInit::unsubscribe()
     {

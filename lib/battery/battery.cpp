@@ -28,16 +28,16 @@ namespace BATTERY
     {
         const std::vector<std::pair<uint16_t, int>> voltageToPercentage = {
             {4200, 100},
-            {4000, 90},
-            {3750, 80},
-            {3620, 70},
-            {3500, 60},
-            {3400, 50},
-            {3300, 40},
-            {3200, 30},
-            {3110, 20},
-            {3050, 10},
-            {3000, 00},
+            {4100, 95},
+            {4040, 87},
+            {3960, 75},
+            {3880, 60},
+            {3800, 45},
+            {3720, 30},
+            {3640, 19},
+            {3560, 10},
+            {3480, 4},
+            {3400, 0},
         };
 
         if (voltage_mV >= voltageToPercentage[0].first)
@@ -60,48 +60,48 @@ namespace BATTERY
                 double voltageDifference = static_cast<double>(voltage_mV - lowerPoint.first);
                 double interpolatedPercent = lowerPoint.second + (voltageDifference / voltageRange) * percentRange;
                 // interpolatedPercent = kf_percent.filter(interpolatedPercent);
-                if (interpolatedPercent >= 95)
-                    return 100;
-                else if (interpolatedPercent >= 90)
-                    return 95;
-                else if (interpolatedPercent >= 85)
-                    return 90;
-                else if (interpolatedPercent >= 80)
-                    return 85;
-                else if (interpolatedPercent >= 75)
-                    return 80;
-                else if (interpolatedPercent >= 70)
-                    return 75;
-                else if (interpolatedPercent >= 65)
-                    return 70;
-                else if (interpolatedPercent >= 60)
-                    return 65;
-                else if (interpolatedPercent >= 55)
-                    return 60;
-                else if (interpolatedPercent >= 50)
-                    return 55;
-                else if (interpolatedPercent >= 45)
-                    return 50;
-                else if (interpolatedPercent >= 40)
-                    return 45;
-                else if (interpolatedPercent >= 35)
-                    return 40;
-                else if (interpolatedPercent >= 30)
-                    return 35;
-                else if (interpolatedPercent >= 25)
-                    return 30;
-                else if (interpolatedPercent >= 20)
-                    return 25;
-                else if (interpolatedPercent >= 15)
-                    return 20;
-                else if (interpolatedPercent >= 10)
-                    return 15;
-                else if (interpolatedPercent >= 5)
-                    return 10;
-                else
-                    return 5;
+                /*     if (interpolatedPercent >= 95)
+                        return 100;
+                    else if (interpolatedPercent >= 90)
+                        return 95;
+                    else if (interpolatedPercent >= 85)
+                        return 90;
+                    else if (interpolatedPercent >= 80)
+                        return 85;
+                    else if (interpolatedPercent >= 75)
+                        return 80;
+                    else if (interpolatedPercent >= 70)
+                        return 75;
+                    else if (interpolatedPercent >= 65)
+                        return 70;
+                    else if (interpolatedPercent >= 60)
+                        return 65;
+                    else if (interpolatedPercent >= 55)
+                        return 60;
+                    else if (interpolatedPercent >= 50)
+                        return 55;
+                    else if (interpolatedPercent >= 45)
+                        return 50;
+                    else if (interpolatedPercent >= 40)
+                        return 45;
+                    else if (interpolatedPercent >= 35)
+                        return 40;
+                    else if (interpolatedPercent >= 30)
+                        return 35;
+                    else if (interpolatedPercent >= 25)
+                        return 30;
+                    else if (interpolatedPercent >= 20)
+                        return 25;
+                    else if (interpolatedPercent >= 15)
+                        return 20;
+                    else if (interpolatedPercent >= 10)
+                        return 15;
+                    else if (interpolatedPercent >= 5)
+                        return 10;
+                    else
+                        return 5; */
 
-                // return static_cast<int>(interpolatedPercent);
+                return static_cast<int>(interpolatedPercent);
             }
         }
 
