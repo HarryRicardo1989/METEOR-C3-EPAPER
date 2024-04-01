@@ -76,6 +76,7 @@ void init(void)
 void init_restarted()
 {
     ESP_LOGI("init_restarted", "Init");
+    save_nvs_int8_var(INIT_COUNTER, 5);
     epd_update->display_make_lines();
 }
 void init_fom_timer(void)
@@ -113,6 +114,7 @@ void init_all_data(void)
 
     if (wifi->isConnected())
     {
+        mqtt_initialize = new PROTOCOL::MqttInit();
         esp_ip4_addr_t ip = wifi->getIP();
         ESP_LOGI("WIFI-STATUS", "Connected at IP: %d.%d.%d.%d", IP2STR(&ip));
         mqtt_initialize->connect();
@@ -167,42 +169,49 @@ void capture_data(void)
 
 void tryConnectToWiFi()
 {
-    if (!wifi->isConnected())
+    if (wifi == nullptr)
     {
         wifi = new WiFiManager();
-        mqtt_initialize = new PROTOCOL::MqttInit();
-        const size_t wifiCredentialsCount = sizeof(wifiCredentials) / sizeof(wifiCredentials[0]);
-
-        for (int i = 0; i < wifiCredentialsCount; i++)
-        {
-            wifi->connect(wifiCredentials[i].ssid, wifiCredentials[i].password);
-            int attempt = 0;
-            while (!wifi->isConnected() && attempt < 6)
-            {
-                ESP_LOGI("WIFI-STATUS", "Attempting to connect to %s", wifiCredentials[i].ssid);
-                vTaskDelay(500 * portTICK_PERIOD_MS);
-                attempt++;
-            }
-            if (wifi->isConnected())
-            {
-                char buffer[20];
-                esp_ip4_addr_t ip = wifi->getIP();
-                ESP_LOGI("WIFI-STATUS", "Connected to %s", wifiCredentials[i].ssid);
-                sprintf(buffer, "IP:%d.%d.%d.%d", IP2STR(&ip));
-                save_nvs_string_var(WIFISSID, (char *)wifiCredentials[i].ssid);
-                save_nvs_string_var(WIFI_IP, buffer);
-
-                return; // Conexão bem-sucedida, sai da função
-            }
-
-            wifi->disconnect();
-        }
     }
 
-    save_nvs_string_var(WIFI_IP, (char *)"Unconnected");
-    save_nvs_string_var(WIFISSID, (char *)"Unconnected");
-    ESP_LOGE("WIFI-STATUS", "Failed to connect to any network");
+    if (!wifi->isConnected())
+    {
+        wifi->scanAndConnect();
+
+        // Define um timeout para a espera
+        const int timeoutSeconds = 30;
+        int waitedSeconds = 0;
+
+        // Espera pela conexão WiFi e por um IP válido
+        while (!wifi->isConnected() || wifi->getIP().addr == 0)
+
+        {
+            if (waitedSeconds >= timeoutSeconds)
+            {
+                ESP_LOGE("WIFI-STATUS", "Failed to connect to any network within timeout.");
+                save_nvs_string_var(WIFI_IP, (char *)"Unconnected");
+                save_nvs_string_var(WIFISSID, (char *)"Unconnected");
+                return;
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(1000)); // Espera 1 segundo
+            waitedSeconds++;
+            ESP_LOGI("WIFI-STATUS", "Waiting for WiFi connection and valid IP...");
+        }
+
+        char buffer[20];
+        esp_ip4_addr_t ip = wifi->getIP();
+        ESP_LOGI("WIFI-STATUS", "Successfully connected with IP: " IPSTR, IP2STR(&ip));
+        sprintf(buffer, "IP:%d.%d.%d.%d", IP2STR(&ip));
+        save_nvs_string_var(WIFISSID, wifi->getSSID());
+        save_nvs_string_var(WIFI_IP, buffer);
+    }
+    else
+    {
+        ESP_LOGI("WIFI-STATUS", "Already connected.");
+    }
 }
+
 void generate_client_ID(void)
 {
     char clientID_raw[30];

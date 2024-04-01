@@ -69,12 +69,12 @@ void app_main()
         break;
     case WAKEUP_UNDEFINED:
         ESP_LOGI("ESP-WAKE-UP", "WAKEUP_UNDEFINED");
-        create_sleep_timer(10);
         save_nvs_string_var(MODEL, DEFAULT_MODEL);
         save_nvs_u32_var(TIME_TO_WAKE_UP, 30);
         save_nvs_string_var(WIFISSID, (char *)"Unconnected");
         save_nvs_string_var(WIFI_IP, (char *)"Unconnected");
         init_restarted();
+        create_sleep_timer(2);
 
         break;
 

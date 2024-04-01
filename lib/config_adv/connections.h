@@ -1,5 +1,5 @@
 #pragma once
-
+#include <cstddef>
 struct WiFiCredential
 {
     const char *ssid;
@@ -8,12 +8,17 @@ struct WiFiCredential
 
 const WiFiCredential wifiCredentials[] = {
     {"Automacao", "Meunomeinteirotudojunto"},
+    {"AAB-DEV", "AAB_DEV1"},
+    {"Cheline - vivo", "sumiu#2825"},
+    {"AAMobi", "$$aab$$@2017@"},
+    {"AAGuest", "udi@1009"},
+    {"ADVOGADOSPLENOS", "agb#780$$"},
+    {"Cheline4", "Sumiu2825"},
     {"WECLIXWIFI", "meunomeInteiroTudojunto"},
     {"Weclix", "meunomeinteirotudojunto"},
-    {"AAB-DEV", "AAB_DEV1"},
     {"ALCANSWIFI", "meunomeInteiroTudojunto"},
-    {"Cheline - vivo", "sumiu#2825"},
 };
+const size_t wifiCredentialsCount = sizeof(wifiCredentials) / sizeof(wifiCredentials[0]);
 
 #define MQTT_URI "20.127.210.50"
 #define MQTT_PORT 1883

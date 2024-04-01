@@ -2,10 +2,12 @@
 #include "wifi_manager.hpp"
 
 esp_ip4_addr_t WiFiManager::ip;
-bool WiFiManager::connected;
+bool WiFiManager::connected = false;
+WiFiManager *WiFiManager::instance = nullptr;
 
 WiFiManager::WiFiManager()
 {
+    instance = this;
     this->connected = false;
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -15,8 +17,12 @@ WiFiManager::WiFiManager()
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &eventHandler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &eventHandler, NULL));
     ESP_LOGI("WiFiManager", "Constructor");
+    memset(currentSSID, 0, sizeof(currentSSID));
 }
-
+bool WiFiManager::isConnected()
+{
+    return connected;
+}
 WiFiManager::~WiFiManager()
 {
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &eventHandler));
@@ -28,13 +34,19 @@ WiFiManager::~WiFiManager()
 
 void WiFiManager::connect(const char *ssid, const char *password)
 {
+    esp_wifi_stop();                      // Certifique-se de parar o WiFi antes de reconfigurá-lo.
+    vTaskDelay(100 / portTICK_PERIOD_MS); // Pequeno delay para garantir a parada do WiFi.
+
     wifi_config_t wifi_config = {};
-    strncpy((char *)wifi_config.sta.ssid, ssid, 32);
-    strncpy((char *)wifi_config.sta.password, password, 64);
+    strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid) - 1);
+    strncpy((char *)wifi_config.sta.password, password, sizeof(wifi_config.sta.password) - 1);
+
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
-    ESP_LOGI("WiFiManager", "Connected");
+    ESP_ERROR_CHECK(esp_wifi_start());   // Inicia o WiFi após configurar.
+    ESP_ERROR_CHECK(esp_wifi_connect()); // Agora tenta se conectar.
+
+    ESP_LOGI("WiFiManager", "Tentando conectar a: %s", ssid);
 }
 
 void WiFiManager::disconnect()
@@ -42,6 +54,68 @@ void WiFiManager::disconnect()
     ESP_LOGI("WiFiManager", "Disconnect");
     esp_wifi_disconnect();
     ESP_LOGI("WiFiManager", "Disconnected");
+}
+char *WiFiManager::getSSID()
+{
+    return currentSSID;
+}
+void WiFiManager::scanAndConnect()
+{
+    if (!connected)
+    { // Verifica se já não está conectado.
+        ESP_ERROR_CHECK(esp_wifi_start());
+
+        ESP_LOGI("WiFiManager", "Iniciando scan de redes WiFi...");
+        esp_err_t result = esp_wifi_scan_start(nullptr, true); // Bloqueia até o scan completar.
+
+        if (result == ESP_OK)
+        {
+            uint16_t numFound = 0;
+            esp_wifi_scan_get_ap_num(&numFound);
+
+            if (numFound == 0)
+            {
+                ESP_LOGI("WiFiManager", "Nenhuma rede encontrada.");
+                return;
+            }
+
+            wifi_ap_record_t *apRecords = new wifi_ap_record_t[numFound];
+            ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&numFound, apRecords));
+            for (int i = 0; i < numFound; ++i)
+            {
+                ESP_LOGI("WiFiManager", "  %d: %s", i + 1, (char *)apRecords[i].ssid);
+            }
+            bool connectedToKnownNetwork = false;
+            for (int i = 0; i < numFound && !connectedToKnownNetwork; ++i)
+            {
+                for (size_t j = 0; j < wifiCredentialsCount; ++j)
+                {
+                    if (strcmp((char *)apRecords[i].ssid, wifiCredentials[j].ssid) == 0)
+                    {
+                        ESP_LOGI("WiFiManager", "Tentando se conectar a: %s", wifiCredentials[j].ssid);
+                        connect(wifiCredentials[j].ssid, wifiCredentials[j].password);
+                        connectedToKnownNetwork = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!connectedToKnownNetwork)
+            {
+                ESP_LOGI("WiFiManager", "Nenhuma rede conhecida encontrada.");
+            }
+
+            delete[] apRecords;
+        }
+        else
+        {
+            ESP_LOGE("WiFiManager", "Scan falhou com erro: %d", result);
+        }
+    }
+    else
+    {
+        ESP_LOGI("WiFiManager", "Já conectado. Não é necessário escanear.");
+    }
 }
 
 esp_ip4_addr_t WiFiManager::getIP()
@@ -52,122 +126,68 @@ esp_ip4_addr_t WiFiManager::getIP()
 void WiFiManager::eventHandler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     ESP_LOGI("WiFiManager", "eventHandler called with event_base=%s, event_id=%ld", event_base, event_id);
-    if (event_base == WIFI_EVENT)
+    if (event_base == WIFI_EVENT && instance)
     {
-
         switch (event_id)
         {
         case WIFI_EVENT_WIFI_READY:
             ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_WIFI_READY");
-
             break;
         case WIFI_EVENT_SCAN_DONE:
             ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_SCAN_DONE");
-
             break;
         case WIFI_EVENT_STA_START:
             ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_STA_START");
-            connected = false;
-            esp_wifi_connect();
-            ESP_LOGI("WiFiManager-WIFI_EVENT", "retry to connect to the AP");
+            instance->connected = false;
             break;
         case WIFI_EVENT_STA_STOP:
             ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_STA_STOP");
-
             break;
+
         case WIFI_EVENT_STA_CONNECTED:
+        {
             ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_STA_CONNECTED");
-
-            break;
-        case WIFI_EVENT_STA_DISCONNECTED:
-            ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_STA_DISCONNECTED");
-            connected = false;
-            esp_wifi_connect();
-            ESP_LOGI("WiFiManager-WIFI_EVENT", "retry to connect to the AP");
-            break;
-        case WIFI_EVENT_AP_START:
-            ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_AP_START");
-
-            break;
-        case WIFI_EVENT_AP_STOP:
-            ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_AP_STOP");
-
-            break;
-        case WIFI_EVENT_STA_WPS_ER_FAILED:
-            ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_STA_WPS_ER_FAILED");
-
-            break;
-        case WIFI_EVENT_AP_STACONNECTED:
-            ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_AP_STACONNECTED");
-
-            break;
-        case WIFI_EVENT_AP_STADISCONNECTED:
-            ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_AP_STACONNECTED");
-
-            break;
-        case WIFI_EVENT_AP_PROBEREQRECVED:
-            ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_AP_PROBEREQRECVED");
-
-            break;
-        case WIFI_EVENT_FTM_REPORT:
-            ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_FTM_REPORT");
-            break;
-        default:
-            ESP_LOGI("WiFiManager-WIFI_EVENT", "%d", (int)event_base);
-
+            wifi_event_sta_connected_t *event = reinterpret_cast<wifi_event_sta_connected_t *>(event_data);
+            strncpy(instance->currentSSID, reinterpret_cast<const char *>(event->ssid), sizeof(instance->currentSSID) - 1);
+            instance->currentSSID[sizeof(instance->currentSSID) - 1] = '\0';
+            instance->connected = true;
             break;
         }
+        case WIFI_EVENT_STA_DISCONNECTED:
+            ESP_LOGI("WiFiManager-WIFI_EVENT", "WIFI_EVENT_STA_DISCONNECTED");
+            instance->connected = false;
+            memset(instance->currentSSID, 0, sizeof(instance->currentSSID)); // Limpa o SSID na desconexão
+            // Aqui você pode escolher reintroduzir uma lógica de reconexão, se desejado.
+            break;
+            // Adicione mais tratamentos de eventos de WIFI_EVENT conforme necessário
+        }
     }
-    else if (event_base == IP_EVENT)
+    else if (event_base == IP_EVENT && instance)
     {
-
         switch (event_id)
         {
         case IP_EVENT_STA_GOT_IP:
         {
-            ESP_LOGI("WiFiManager", "IP_EVENT_STA_GOT_IP");
-            connected = true;
-            ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
-            ip = event->ip_info.ip;
-            ESP_LOGI("WiFiManager-IP_EVENT", "got ip:" IPSTR, IP2STR(&ip));
+            ip_event_got_ip_t *event = reinterpret_cast<ip_event_got_ip_t *>(event_data);
+            // Verifica se o endereço IP obtido é diferente de 0.0.0.0
+            if (event->ip_info.ip.addr != 0)
+            {
+                ESP_LOGI("WIFI-STATUS", "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
+                instance->ip = event->ip_info.ip; // Atualiza o endereço IP da instância
+                instance->connected = true;       // Confirma a conexão após receber um IP válido
+            }
+            else
+            {
+                ESP_LOGE("WIFI-STATUS", "Received invalid IP address: 0.0.0.0");
+                instance->connected = false; // Marca como desconectado se o IP for inválido
+            }
+            break;
         }
-        break;
         case IP_EVENT_STA_LOST_IP:
-        {
             ESP_LOGI("WiFiManager-IP_EVENT", "IP_EVENT_STA_LOST_IP");
-        }
-        break;
-        case IP_EVENT_AP_STAIPASSIGNED:
-            ESP_LOGI("WiFiManager-IP_EVENT", "IP_EVENT_AP_STAIPASSIGNED");
+            instance->connected = false; // Marca como desconectado se o IP foi perdido
             break;
-        case IP_EVENT_GOT_IP6:
-            ESP_LOGI("WiFiManager-IP_EVENT", "IP_EVENT_GOT_IP6");
-            break;
-        case IP_EVENT_ETH_GOT_IP:
-            ESP_LOGI("WiFiManager-IP_EVENT", "IP_EVENT_ETH_GOT_IP");
-
-            break;
-        case IP_EVENT_ETH_LOST_IP:
-            ESP_LOGI("WiFiManager-IP_EVENT", "IP_EVENT_ETH_LOST_IP");
-
-            break;
-        case IP_EVENT_PPP_GOT_IP:
-            ESP_LOGI("WiFiManager-IP_EVENT", "IP_EVENT_PPP_GOT_IP");
-
-            break;
-        case IP_EVENT_PPP_LOST_IP:
-            ESP_LOGI("WiFiManager-IP_EVENT", "IP_EVENT_PPP_LOST_IP");
-
-            break;
-        default:
-            ESP_LOGI("WiFiManager-IP_EVENT", "%d", (int)event_base);
-
-            break;
+            // Outros eventos IP...
         }
     }
-}
-
-bool WiFiManager::isConnected()
-{
-    return connected;
 }
