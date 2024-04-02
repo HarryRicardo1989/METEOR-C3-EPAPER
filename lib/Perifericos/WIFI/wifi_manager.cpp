@@ -17,6 +17,15 @@ WiFiManager::WiFiManager()
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &eventHandler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &eventHandler, NULL));
     ESP_LOGI("WiFiManager", "Constructor");
+    esp_err_t ret = esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
+    if (ret == ESP_OK)
+    {
+        ESP_LOGI("WiFiManager", "Wi-Fi power save mode set to MAX_MODEM.\n");
+    }
+    else
+    {
+        ESP_LOGI("WiFiManager", "Failed to set Wi-Fi power save mode.\n");
+    }
     memset(currentSSID, 0, sizeof(currentSSID));
 }
 bool WiFiManager::isConnected()
