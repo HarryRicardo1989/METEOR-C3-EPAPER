@@ -27,6 +27,7 @@
 #define PORT_TICK_PERIOD_SECONDS (1000 / portTICK_PERIOD_MS)
 #define SECONDS 1000000
 #define TIME_TO_WAKE_UP (char *)"timeToWakeUp"
+#define WAKE_COUNTS (char *)"wakeCounts"
 
 #define VTASK_PRIORITY_SLEEP_TIMER 1
 #define VTASK_STACK_SIZE_SLEEP_TIMER configMINIMAL_STACK_SIZE + 1024
@@ -79,7 +80,7 @@
 #define CLIENT_ID (char *)"clientID"
 
 #define INIT_COUNTER (char *)"initCounter"
-#define INIT_COUNTER_NUMBER 5
+#define INIT_COUNTER_NUMBER 0
 /**
  * @brief AES Crypto config
  *

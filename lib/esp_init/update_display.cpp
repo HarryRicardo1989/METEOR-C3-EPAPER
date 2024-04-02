@@ -56,9 +56,9 @@ void EPD_UPDATE::display_connections(DeviceInfo *device_info)
 
     this->_epd_instance->epd_displayBW_partial(this->image_bw);
 
-    sprintf(buffer, "%s", this->_device_info->IPstring); // Formata a temperatura
+    sprintf(buffer, "%s", this->_device_info->IPstring);
     this->_epd_instance->epd_paint_showString(0, 113, (uint8_t *)buffer, EPD_FONT_SIZE8x6, this->_colorLetter);
-    sprintf(buffer, "SSID:%s", this->_device_info->wifi_ssid); // Formata a temperatura
+    sprintf(buffer, "SSID:%s", this->_device_info->wifi_ssid);
     this->_epd_instance->epd_paint_showString(129, 113, (uint8_t *)buffer, EPD_FONT_SIZE8x6, this->_colorLetter);
 
     this->_epd_instance->epd_displayBW_partial(this->image_bw);
@@ -82,6 +82,7 @@ void EPD_UPDATE::display_partial(DeviceInfo *device_info)
     this->_epd_instance->epd_paint_showString(195, 2, (uint8_t *)"    ", EPD_FONT_SIZE8x6, this->_colorLetter);
     this->_epd_instance->epd_paint_showString(0, 113, (uint8_t *)"                    ", EPD_FONT_SIZE8x6, this->_colorLetter);
     this->_epd_instance->epd_paint_showString(129, 113, (uint8_t *)"                    ", EPD_FONT_SIZE8x6, this->_colorLetter);
+    this->_epd_instance->epd_paint_showString(129, 102, (uint8_t *)"                    ", EPD_FONT_SIZE8x6, this->_colorLetter);
 
     this->_epd_instance->epd_displayBW_partial(this->image_bw);
 
@@ -115,6 +116,8 @@ void EPD_UPDATE::display_partial(DeviceInfo *device_info)
     this->_epd_instance->epd_paint_showString(0, 113, (uint8_t *)buffer, EPD_FONT_SIZE8x6, this->_colorLetter);
     sprintf(buffer, "SSID:%s", this->_device_info->wifi_ssid); // Formata a temperatura
     this->_epd_instance->epd_paint_showString(129, 113, (uint8_t *)buffer, EPD_FONT_SIZE8x6, this->_colorLetter);
+    sprintf(buffer, "Wakes:%ld", _device_info->wake_counts);
+    this->_epd_instance->epd_paint_showString(129, 102, (uint8_t *)buffer, EPD_FONT_SIZE8x6, this->_colorLetter);
 
     this->_epd_instance->epd_displayBW_partial(this->image_bw);
 

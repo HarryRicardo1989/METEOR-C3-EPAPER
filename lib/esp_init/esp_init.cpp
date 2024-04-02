@@ -26,6 +26,17 @@ void init(void)
 
         deisolate_gpio();
     }
+    if (read_nvs_uint32_var(WAKE_COUNTS) >= UINT32_MAX)
+    {
+        save_nvs_u32_var(WAKE_COUNTS, 0);
+    }
+    else
+    {
+        uint32_t wake_counts = read_nvs_uint32_var(WAKE_COUNTS);
+        wake_counts++;
+        save_nvs_u32_var(WAKE_COUNTS, wake_counts);
+    }
+
     int ota_status = read_nvs_int8_var(OTA_STATUS_SUCCESS);
     if (ota_status != 0 && ota_status != 1)
     {
@@ -78,6 +89,8 @@ void init_restarted()
     ESP_LOGI("init_restarted", "Init");
     save_nvs_int8_var(INIT_COUNTER, 5);
     epd_update->display_make_lines();
+    epd_update->display_make();
+    capture_data();
 }
 void init_fom_timer(void)
 {
@@ -163,6 +176,7 @@ void capture_data(void)
     device_info_raw->wifi_ssid = read_nvs_string_var(WIFISSID);
     device_info_raw->charged = read_nvs_int8_var(BATTERY_CHARGED_STATUS);
     device_info_raw->charging = read_nvs_int8_var(BATTERY_CHARGING_STATUS);
+    device_info_raw->wake_counts = read_nvs_uint32_var(WAKE_COUNTS);
 
     epd_update->display_partial(device_info_raw);
 }
@@ -179,7 +193,7 @@ void tryConnectToWiFi()
         wifi->scanAndConnect();
 
         // Define um timeout para a espera
-        const int timeoutSeconds = 30;
+        const int timeoutSeconds = 5;
         int waitedSeconds = 0;
 
         // Espera pela conexão WiFi e por um IP válido
@@ -205,6 +219,7 @@ void tryConnectToWiFi()
         sprintf(buffer, "IP:%d.%d.%d.%d", IP2STR(&ip));
         save_nvs_string_var(WIFISSID, wifi->getSSID());
         save_nvs_string_var(WIFI_IP, buffer);
+        return;
     }
     else
     {
@@ -352,7 +367,7 @@ void otaInit(void)
         init_epDisplay();
         ESP_LOGI("init_epDisplay", "Init");
         OtaUpdate otaUpdater;
-        create_sleep_timer(120);
+        create_sleep_timer(300);
         epd_update->updatingfw(OTA_MSG_UPDATE);
         char *url = nullptr;
         char *crc = nullptr;

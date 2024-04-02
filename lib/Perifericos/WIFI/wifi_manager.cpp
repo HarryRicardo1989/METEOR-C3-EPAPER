@@ -34,12 +34,15 @@ WiFiManager::~WiFiManager()
 
 void WiFiManager::connect(const char *ssid, const char *password)
 {
-    esp_wifi_stop();                      // Certifique-se de parar o WiFi antes de reconfigurá-lo.
+    ESP_ERROR_CHECK(esp_wifi_stop());     // Certifique-se de parar o WiFi antes de reconfigurá-lo.
     vTaskDelay(100 / portTICK_PERIOD_MS); // Pequeno delay para garantir a parada do WiFi.
 
     wifi_config_t wifi_config = {};
     strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid) - 1);
     strncpy((char *)wifi_config.sta.password, password, sizeof(wifi_config.sta.password) - 1);
+    wifi_config.sta.channel = 0;
+    wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+    wifi_config.sta.failure_retry_cnt = 2;
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));

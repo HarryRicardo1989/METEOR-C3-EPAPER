@@ -1,5 +1,7 @@
 #pragma once
 #include "EpaperDisplay.hpp"
+#include "rw_data.h"
+#include "tasks_common.h"
 #include "esp_log.h"
 struct DeviceInfo
 {
@@ -14,6 +16,7 @@ struct DeviceInfo
     uint32_t bat_mv = 0;
     bool charging = false;
     bool charged = false;
+    uint32_t wake_counts = 0;
 };
 
 class EPD_UPDATE

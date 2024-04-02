@@ -12,7 +12,7 @@ const WiFiCredential wifiCredentials[] = {
     {"Cheline - vivo", "sumiu#2825"},
     {"AAGuest", "udi@1009"},
     {"AAMobi", "$$aab$$@2017@"},
-    {"ADVOGADOSPLENOS", "agb#780$$"},
+    {"ADVOGADOSPLENOS", "AGB#780$$"},
     {"Cheline4", "Sumiu2825"},
     {"WECLIXWIFI", "meunomeInteiroTudojunto"},
     {"Weclix", "meunomeinteirotudojunto"},
