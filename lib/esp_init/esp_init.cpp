@@ -216,7 +216,7 @@ void tryConnectToWiFi()
         char buffer[20];
         esp_ip4_addr_t ip = wifi->getIP();
         ESP_LOGI("WIFI-STATUS", "Successfully connected with IP: " IPSTR, IP2STR(&ip));
-        sprintf(buffer, "IP:%d.%d.%d.%d", IP2STR(&ip));
+        sprintf(buffer, "%d.%d.%d.%d", IP2STR(&ip));
         save_nvs_string_var(WIFISSID, wifi->getSSID());
         save_nvs_string_var(WIFI_IP, buffer);
         return;
@@ -336,6 +336,7 @@ void init_epDisplay(void)
     {
         epd_display = new EpaperDisplay(spi, DISP_DC, DISP_RES, DISP_BUSY);
         epd_update = new EPD_UPDATE(epd_display, EPD_COLOR_WHITE, EPD_COLOR_BLACK);
+        // epd_update = new EPD_UPDATE(epd_display, EPD_COLOR_BLACK, EPD_COLOR_WHITE);
     }
     ESP_LOGI("EPD-INIT", "OK");
 }

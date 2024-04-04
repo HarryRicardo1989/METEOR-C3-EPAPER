@@ -80,7 +80,7 @@
 #define CLIENT_ID (char *)"clientID"
 
 #define INIT_COUNTER (char *)"initCounter"
-#define INIT_COUNTER_NUMBER 0
+#define INIT_COUNTER_NUMBER 3
 /**
  * @brief AES Crypto config
  *

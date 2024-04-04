@@ -71,7 +71,7 @@ void app_main()
         ESP_LOGI("ESP-WAKE-UP", "WAKEUP_UNDEFINED");
         save_nvs_string_var(MODEL, DEFAULT_MODEL);
         save_nvs_u32_var(WAKE_COUNTS, 0);
-        save_nvs_u32_var(TIME_TO_WAKE_UP, 10);
+        save_nvs_u32_var(TIME_TO_WAKE_UP, 20);
         save_nvs_string_var(WIFISSID, (char *)"Unconnected");
         save_nvs_string_var(WIFI_IP, (char *)"Unconnected");
         init_restarted();

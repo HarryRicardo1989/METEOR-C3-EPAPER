@@ -42,7 +42,6 @@ public:
     void display_make();
     void display_level_box();
     void display_voltage_box();
-    void display_connections(DeviceInfo *device_info);
     void display_lines();
     void display_make_lines();
     void sleep();
